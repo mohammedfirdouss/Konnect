@@ -1,12 +1,8 @@
-# Byte-compiled / optimized / DLL files
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
-
-# C extensions
 *.so
-
-# Distribution / packaging
 .Python
 build/
 develop-eggs/
@@ -23,6 +19,8 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+MANIFEST
+
 
 # PyInstaller
 *.manifest
@@ -45,6 +43,33 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# PyCharm
+.idea/
+
+# VSCode
+.vscode/
+
+# Pytest
+.pytest_cache/
+
+# Coverage
+.coverage
+htmlcov/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+=======
+
+# IDEs
 # Translations
 *.mo
 *.pot
@@ -110,11 +135,16 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# IDE
-.vscode/
+# IDE.vscode/
 .idea/
 *.swp
 *.swo
+
+# Docker
+.dockerignore
+
+# Logs
+*.log
 *~
 
 # OS
@@ -125,3 +155,15 @@ dmypy.json
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Database
+*.db
+*.sqlite3
+
+# Temporary files
+*.tmp
+*.temp
