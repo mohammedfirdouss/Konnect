@@ -22,7 +22,7 @@ async def register_user(user: UserCreate, db: Session = Depends(get_db)):
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username already registered"
+            detail="Username already registered",
         )
     
     # Check if email already exists
@@ -36,7 +36,14 @@ async def register_user(user: UserCreate, db: Session = Depends(get_db)):
     # Create new user
     db_user = crud.create_user(db, user)
     return User.model_validate(db_user)
-
+    db_user = create_user(user)
+    return User(
+        id=db_user.id,
+        username=db_user.username,
+        email=db_user.email,
+        full_name=db_user.full_name,
+        is_active=db_user.is_active,
+    )
 
 @router.post("/token", response_model=Token)
 async def login_for_access_token(

@@ -8,6 +8,12 @@ from sqlalchemy.orm import relationship
 
 from .database import Base
 
+class UserBase(BaseModel):
+    """Base user model"""
+
+    username: str
+    email: str
+    full_name: Optional[str] = None
 
 class User(Base):
     """User model"""
@@ -22,9 +28,20 @@ class User(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
+    class UserCreate(UserBase):
+    """User creation model"""
+
+    password: str
+
     # Relationships
     marketplaces = relationship("Marketplace", back_populates="owner")
     listings = relationship("Listing", back_populates="user")
+
+class User(UserBase):
+    """User response model"""
+
+    id: int
+    is_active: bool = True
 
 
 class Marketplace(Base):
@@ -47,6 +64,17 @@ class Marketplace(Base):
 class Listing(Base):
     """Listing model for goods and services"""
     __tablename__ = "listings"
+class UserInDB(User):
+    """User model for database storage"""
+
+    hashed_password: str
+
+
+class Token(BaseModel):
+    """Token response model"""
+
+    access_token: str
+    token_type: str
 
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String(255), nullable=False, index=True)
@@ -62,3 +90,7 @@ class Listing(Base):
     # Relationships
     marketplace = relationship("Marketplace", back_populates="listings")
     user = relationship("User", back_populates="listings")
+class TokenData(BaseModel):
+    """Token data model"""
+
+    username: Optional[str] = None
