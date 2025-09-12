@@ -7,7 +7,7 @@ from fastapi import FastAPI
 app = FastAPI(
     title="Konnect",
     description="Campus Tools with SolanaPay",
-    version="0.1.0",
+    version="0.1.0"
 )
 
 
@@ -35,3 +35,4 @@ def validate_payment_amount(amount: float) -> bool:
     if amount > 1000000:  # Max amount limit
         return False
     return True
+    return {"status": "healthy"}

@@ -27,6 +27,29 @@ COPY konnect/ ./konnect/
 # Create non-root user for security
 RUN adduser --disabled-password --gecos '' appuser && \
     chown -R appuser:appuser /app
+
+# Simple FastAPI Dockerfile
+FROM python:3.12-slim
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+# Create non-root user
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+
+# Set work directory
+WORKDIR /app
+
+# Copy requirements and install dependencies
+COPY requirements.txt .
+RUN pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org -r requirements.txt
+
+# Copy application code
+COPY konnect ./konnect
+
+# Change ownership to non-root user
+RUN chown -R appuser:appuser /app
 USER appuser
 
 # Expose port
