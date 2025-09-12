@@ -2,16 +2,15 @@
 Test database setup without requiring a running PostgreSQL instance
 """
 
-from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker
-import os
+
+from sqlalchemy import create_engine
 
 
 def test_sqlalchemy_import():
     """Test if SQLAlchemy can be imported and used"""
     try:
         # Test basic SQLAlchemy imports
-        from sqlalchemy import Column, Integer, String, DateTime
+        from sqlalchemy import Column, Integer, String
         from sqlalchemy.ext.declarative import declarative_base
 
         Base = declarative_base()
@@ -38,7 +37,7 @@ def test_database_url_parsing():
         ]
 
         for url in urls:
-            engine = create_engine(url, strategy="mock", executor=lambda sql, *_: None)
+            create_engine(url, strategy="mock", executor=lambda sql, *_: None)
             print(f"✓ Database URL parsed successfully: {url}")
 
         return True

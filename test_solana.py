@@ -2,8 +2,8 @@
 Simple test to validate Solana SDK functionality
 """
 
-from solana.rpc.api import Client
 import pytest
+from solana.rpc.api import Client
 
 
 def test_solana_connection():

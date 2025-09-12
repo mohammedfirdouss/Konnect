@@ -25,7 +25,7 @@ jobs:
         pip install ruff
     
     - name: Run Ruff linter
-      run: ruff check .
+      run: ruff check .`
     
     - name: Run Ruff formatter
       run: ruff format --check .
