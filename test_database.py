@@ -2,7 +2,6 @@
 Test database setup without requiring a running PostgreSQL instance
 """
 
-
 from sqlalchemy import create_engine
 
 

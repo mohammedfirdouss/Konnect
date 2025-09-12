@@ -5,9 +5,7 @@ Main application module for Konnect
 from fastapi import FastAPI
 
 app = FastAPI(
-    title="Konnect",
-    description="Campus Tools with SolanaPay",
-    version="0.1.0"
+    title="Konnect", description="Campus Tools with SolanaPay", version="0.1.0"
 )
 
 
