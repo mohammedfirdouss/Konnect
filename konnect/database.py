@@ -26,7 +26,7 @@ def create_user(user: UserCreate) -> UserInDB:
         email=user.email,
         full_name=user.full_name,
         hashed_password=hashed_password,
-        is_active=True
+        is_active=True,
     )
     fake_users_db[user.username] = db_user
     user_id_counter += 1

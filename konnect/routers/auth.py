@@ -20,7 +20,7 @@ async def register_user(user: UserCreate):
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username already registered"
+            detail="Username already registered",
         )
 
     # Create new user
@@ -30,7 +30,7 @@ async def register_user(user: UserCreate):
         username=db_user.username,
         email=db_user.email,
         full_name=db_user.full_name,
-        is_active=db_user.is_active
+        is_active=db_user.is_active,
     )
 
 

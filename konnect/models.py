@@ -7,6 +7,7 @@ from pydantic import BaseModel
 
 class UserBase(BaseModel):
     """Base user model"""
+
     username: str
     email: str
     full_name: Optional[str] = None
@@ -14,11 +15,13 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     """User creation model"""
+
     password: str
 
 
 class User(UserBase):
     """User response model"""
+
     id: int
     is_active: bool = True
 
@@ -28,15 +31,18 @@ class User(UserBase):
 
 class UserInDB(User):
     """User model for database storage"""
+
     hashed_password: str
 
 
 class Token(BaseModel):
     """Token response model"""
+
     access_token: str
     token_type: str
 
 
 class TokenData(BaseModel):
     """Token data model"""
+
     username: Optional[str] = None
