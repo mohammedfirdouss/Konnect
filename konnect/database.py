@@ -1,45 +1,39 @@
-"""In-memory database for users"""
+"""Database configuration and session management"""
 
-from typing import Dict, Optional
+import os
+from typing import Generator
 
-from .auth import get_password_hash
-from .models import UserCreate, UserInDB
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, Session, declarative_base
 
-# In-memory user database
-fake_users_db: Dict[str, UserInDB] = {}
-user_id_counter = 1
+# Database URL configuration
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "sqlite:///./konnect.db"  # Default to SQLite for development
+)
 
+# Create SQLAlchemy engine
+engine = create_engine(
+    DATABASE_URL,
+    connect_args={"check_same_thread": False} if "sqlite" in DATABASE_URL else {}
+)
 
-def get_user(username: str) -> Optional[UserInDB]:
-    """Get user by username"""
-    return fake_users_db.get(username)
+# Create SessionLocal class
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-
-def create_user(user: UserCreate) -> UserInDB:
-    """Create a new user"""
-    global user_id_counter
-
-    hashed_password = get_password_hash(user.password)
-    db_user = UserInDB(
-        id=user_id_counter,
-        username=user.username,
-        email=user.email,
-        full_name=user.full_name,
-        hashed_password=hashed_password,
-        is_active=True
-    )
-    fake_users_db[user.username] = db_user
-    user_id_counter += 1
-    return db_user
+# Create Base class for models
+Base = declarative_base()
 
 
-def authenticate_user(username: str, password: str) -> Optional[UserInDB]:
-    """Authenticate a user"""
-    from .auth import verify_password
+def get_db() -> Generator[Session, None, None]:
+    """Dependency to get database session"""
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
-    user = get_user(username)
-    if not user:
-        return None
-    if not verify_password(password, user.hashed_password):
-        return None
-    return user
+
+def create_tables():
+    """Create database tables"""
+    Base.metadata.create_all(bind=engine)

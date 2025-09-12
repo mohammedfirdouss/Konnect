@@ -39,4 +39,3 @@ def validate_payment_amount(amount: float) -> bool:
     if amount > 1000000:  # Max amount limit
         return False
     return True
-    return {"status": "healthy"}
