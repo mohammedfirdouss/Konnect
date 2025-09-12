@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "konnect"
+version = "0.1.0"
+description = "Campus Tools with SolanaPay"
+authors = ["copilot-swe-agent[bot] <198982749+Copilot@users.noreply.github.com>"]
+readme = "README.md"
+packages = [{include = "konnect"}]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = "^0.116.1"
+uvicorn = {extras = ["standard"], version = "^0.35.0"}
+
+[tool.poetry.group.dev.dependencies]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
