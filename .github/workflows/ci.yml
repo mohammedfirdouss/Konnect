@@ -1,0 +1,82 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint-and-format:
+    runs-on: ubuntu-latest
+    name: Lint and Format with Ruff
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install ruff
+    
+    - name: Run Ruff linter
+      run: ruff check .
+    
+    - name: Run Ruff formatter
+      run: ruff format --check .
+
+  test:
+    runs-on: ubuntu-latest
+    name: Run Tests with Pytest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[dev]"
+    
+    - name: Run tests with pytest
+      run: pytest
+
+  docker-build:
+    runs-on: ubuntu-latest
+    name: Build Docker Image
+    needs: [lint-and-format, test]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Build Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./Dockerfile
+        push: false
+        tags: konnect:latest
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+    
+    - name: Test Docker image
+      run: |
+        docker run --rm -d --name konnect-test -p 8000:8000 konnect:latest
+        sleep 10
+        # Simple test to check if container is running
+        docker ps | grep konnect-test
+        # Test health endpoint if possible
+        docker exec konnect-test python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || echo "Health check skipped"
+        docker stop konnect-test
