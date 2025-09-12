@@ -55,24 +55,21 @@ def test_user():
             "username": "testuser",
             "email": "test@example.com",
             "password": "testpassword123",
-            "full_name": "Test User"
+            "full_name": "Test User",
         }
-        
+
         # Register user
         response = client.post("/auth/register", json=user_data)
         assert response.status_code == 200
-        
+
         # Login to get token
-        login_data = {
-            "username": "testuser",
-            "password": "testpassword123"
-        }
+        login_data = {"username": "testuser", "password": "testpassword123"}
         response = client.post("/auth/token", data=login_data)
         assert response.status_code == 200
-        
+
         token = response.json()["access_token"]
         headers = {"Authorization": f"Bearer {token}"}
-        
+
         return {"headers": headers, "user_id": response.json().get("user_id", 1)}
     finally:
         db.close()
@@ -86,7 +83,7 @@ def test_marketplace(test_user):
         marketplace = models.Marketplace(
             name="Test Marketplace",
             description="A marketplace for testing",
-            created_by=1  # Assuming first user has ID 1
+            created_by=1,  # Assuming first user has ID 1
         )
         db.add(marketplace)
         db.commit()
@@ -103,12 +100,14 @@ def test_create_listing_success(test_user, test_marketplace):
         "description": "A test listing",
         "price": 99.99,
         "category": "electronics",
-        "marketplace_id": test_marketplace.id
+        "marketplace_id": test_marketplace.id,
     }
-    
-    response = client.post("/listings/", json=listing_data, headers=test_user["headers"])
+
+    response = client.post(
+        "/listings/", json=listing_data, headers=test_user["headers"]
+    )
     assert response.status_code == 201
-    
+
     data = response.json()
     assert data["title"] == "Test Listing"
     assert data["price"] == 99.99
@@ -124,9 +123,9 @@ def test_create_listing_unauthorized():
         "description": "A test listing",
         "price": 99.99,
         "category": "electronics",
-        "marketplace_id": 1
+        "marketplace_id": 1,
     }
-    
+
     response = client.post("/listings/", json=listing_data)
     assert response.status_code == 401
 
@@ -138,10 +137,12 @@ def test_create_listing_invalid_marketplace(test_user):
         "description": "A test listing",
         "price": 99.99,
         "category": "electronics",
-        "marketplace_id": 999  # Non-existent marketplace
+        "marketplace_id": 999,  # Non-existent marketplace
     }
-    
-    response = client.post("/listings/", json=listing_data, headers=test_user["headers"])
+
+    response = client.post(
+        "/listings/", json=listing_data, headers=test_user["headers"]
+    )
     assert response.status_code == 404
     assert "Marketplace not found" in response.json()["detail"]
 
@@ -161,16 +162,18 @@ def test_get_listings_with_data(test_user, test_marketplace):
         "description": "A test listing",
         "price": 99.99,
         "category": "electronics",
-        "marketplace_id": test_marketplace.id
+        "marketplace_id": test_marketplace.id,
     }
-    
-    create_response = client.post("/listings/", json=listing_data, headers=test_user["headers"])
+
+    create_response = client.post(
+        "/listings/", json=listing_data, headers=test_user["headers"]
+    )
     assert create_response.status_code == 201
-    
+
     # Now get all listings
     response = client.get("/listings/")
     assert response.status_code == 200
-    
+
     data = response.json()
     assert len(data) >= 1
     assert data[0]["title"] == "Test Listing"
@@ -184,26 +187,26 @@ def test_get_listings_with_filters(test_user, test_marketplace):
         "description": "An electronics item",
         "price": 99.99,
         "category": "electronics",
-        "marketplace_id": test_marketplace.id
+        "marketplace_id": test_marketplace.id,
     }
-    
+
     listing2_data = {
         "title": "Book Item",
         "description": "A book item",
         "price": 19.99,
         "category": "books",
-        "marketplace_id": test_marketplace.id
+        "marketplace_id": test_marketplace.id,
     }
-    
+
     client.post("/listings/", json=listing1_data, headers=test_user["headers"])
     client.post("/listings/", json=listing2_data, headers=test_user["headers"])
-    
+
     # Test marketplace filter
     response = client.get(f"/listings/?marketplace_id={test_marketplace.id}")
     assert response.status_code == 200
     data = response.json()
     assert len(data) >= 2
-    
+
     # Test category filter
     response = client.get("/listings/?category=electronics")
     assert response.status_code == 200
@@ -220,16 +223,18 @@ def test_get_listing_by_id(test_user, test_marketplace):
         "description": "A test listing",
         "price": 99.99,
         "category": "electronics",
-        "marketplace_id": test_marketplace.id
+        "marketplace_id": test_marketplace.id,
     }
-    
-    create_response = client.post("/listings/", json=listing_data, headers=test_user["headers"])
+
+    create_response = client.post(
+        "/listings/", json=listing_data, headers=test_user["headers"]
+    )
     listing_id = create_response.json()["id"]
-    
+
     # Get the listing by ID
     response = client.get(f"/listings/{listing_id}")
     assert response.status_code == 200
-    
+
     data = response.json()
     assert data["id"] == listing_id
     assert data["title"] == "Test Listing"
@@ -250,21 +255,22 @@ def test_update_listing_success(test_user, test_marketplace):
         "description": "Original description",
         "price": 99.99,
         "category": "electronics",
-        "marketplace_id": test_marketplace.id
+        "marketplace_id": test_marketplace.id,
     }
-    
-    create_response = client.post("/listings/", json=listing_data, headers=test_user["headers"])
+
+    create_response = client.post(
+        "/listings/", json=listing_data, headers=test_user["headers"]
+    )
     listing_id = create_response.json()["id"]
-    
+
     # Update the listing
-    update_data = {
-        "title": "Updated Title",
-        "price": 199.99
-    }
-    
-    response = client.put(f"/listings/{listing_id}", json=update_data, headers=test_user["headers"])
+    update_data = {"title": "Updated Title", "price": 199.99}
+
+    response = client.put(
+        f"/listings/{listing_id}", json=update_data, headers=test_user["headers"]
+    )
     assert response.status_code == 200
-    
+
     data = response.json()
     assert data["title"] == "Updated Title"
     assert data["price"] == 199.99
@@ -279,12 +285,14 @@ def test_update_listing_unauthorized(test_user, test_marketplace):
         "description": "A test listing",
         "price": 99.99,
         "category": "electronics",
-        "marketplace_id": test_marketplace.id
+        "marketplace_id": test_marketplace.id,
     }
-    
-    create_response = client.post("/listings/", json=listing_data, headers=test_user["headers"])
+
+    create_response = client.post(
+        "/listings/", json=listing_data, headers=test_user["headers"]
+    )
     listing_id = create_response.json()["id"]
-    
+
     # Try to update without authentication
     update_data = {"title": "Hacked Title"}
     response = client.put(f"/listings/{listing_id}", json=update_data)
@@ -294,7 +302,9 @@ def test_update_listing_unauthorized(test_user, test_marketplace):
 def test_update_listing_not_found(test_user):
     """Test updating a listing that doesn't exist"""
     update_data = {"title": "Updated Title"}
-    response = client.put("/listings/999", json=update_data, headers=test_user["headers"])
+    response = client.put(
+        "/listings/999", json=update_data, headers=test_user["headers"]
+    )
     assert response.status_code == 404
 
 
@@ -306,16 +316,18 @@ def test_delete_listing_success(test_user, test_marketplace):
         "description": "A test listing",
         "price": 99.99,
         "category": "electronics",
-        "marketplace_id": test_marketplace.id
+        "marketplace_id": test_marketplace.id,
     }
-    
-    create_response = client.post("/listings/", json=listing_data, headers=test_user["headers"])
+
+    create_response = client.post(
+        "/listings/", json=listing_data, headers=test_user["headers"]
+    )
     listing_id = create_response.json()["id"]
-    
+
     # Delete the listing
     response = client.delete(f"/listings/{listing_id}", headers=test_user["headers"])
     assert response.status_code == 204
-    
+
     # Verify the listing is no longer accessible
     get_response = client.get(f"/listings/{listing_id}")
     assert get_response.status_code == 404
@@ -329,12 +341,14 @@ def test_delete_listing_unauthorized(test_user, test_marketplace):
         "description": "A test listing",
         "price": 99.99,
         "category": "electronics",
-        "marketplace_id": test_marketplace.id
+        "marketplace_id": test_marketplace.id,
     }
-    
-    create_response = client.post("/listings/", json=listing_data, headers=test_user["headers"])
+
+    create_response = client.post(
+        "/listings/", json=listing_data, headers=test_user["headers"]
+    )
     listing_id = create_response.json()["id"]
-    
+
     # Try to delete without authentication
     response = client.delete(f"/listings/{listing_id}")
     assert response.status_code == 401
@@ -355,16 +369,16 @@ def test_pagination(test_user, test_marketplace):
             "description": f"Test listing number {i}",
             "price": 10.0 + i,
             "category": "test",
-            "marketplace_id": test_marketplace.id
+            "marketplace_id": test_marketplace.id,
         }
         client.post("/listings/", json=listing_data, headers=test_user["headers"])
-    
+
     # Test pagination
     response = client.get("/listings/?skip=0&limit=3")
     assert response.status_code == 200
     data = response.json()
     assert len(data) <= 3
-    
+
     response = client.get("/listings/?skip=3&limit=3")
     assert response.status_code == 200
     data = response.json()
