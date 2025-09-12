@@ -1,8 +1,9 @@
 """Users router"""
 
 from fastapi import APIRouter, Depends
-from ..models import User
+
 from ..dependencies import get_current_active_user
+from ..models import User
 
 router = APIRouter(prefix="/users", tags=["users"])
 

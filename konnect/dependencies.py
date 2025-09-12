@@ -2,6 +2,7 @@
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
+
 from .auth import verify_token
 from .database import get_user
 from .models import User
@@ -16,15 +17,15 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    
+
     token_data = verify_token(token)
     if token_data is None or token_data.username is None:
         raise credentials_exception
-    
+
     user = get_user(username=token_data.username)
     if user is None:
         raise credentials_exception
-    
+
     return User(
         id=user.id,
         username=user.username,

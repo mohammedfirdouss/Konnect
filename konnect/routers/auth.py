@@ -1,11 +1,13 @@
 """Authentication router"""
 
 from datetime import timedelta
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
-from ..models import UserCreate, User, Token
-from ..database import create_user, authenticate_user, get_user
-from ..auth import create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
+
+from ..auth import ACCESS_TOKEN_EXPIRE_MINUTES, create_access_token
+from ..database import authenticate_user, create_user, get_user
+from ..models import Token, User, UserCreate
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
 
@@ -20,7 +22,7 @@ async def register_user(user: UserCreate):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Username already registered"
         )
-    
+
     # Create new user
     db_user = create_user(user)
     return User(

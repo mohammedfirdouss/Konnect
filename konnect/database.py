@@ -1,8 +1,9 @@
 """In-memory database for users"""
 
 from typing import Dict, Optional
-from .models import UserInDB, UserCreate
+
 from .auth import get_password_hash
+from .models import UserCreate, UserInDB
 
 # In-memory user database
 fake_users_db: Dict[str, UserInDB] = {}
@@ -17,7 +18,7 @@ def get_user(username: str) -> Optional[UserInDB]:
 def create_user(user: UserCreate) -> UserInDB:
     """Create a new user"""
     global user_id_counter
-    
+
     hashed_password = get_password_hash(user.password)
     db_user = UserInDB(
         id=user_id_counter,
@@ -35,7 +36,7 @@ def create_user(user: UserCreate) -> UserInDB:
 def authenticate_user(username: str, password: str) -> Optional[UserInDB]:
     """Authenticate a user"""
     from .auth import verify_password
-    
+
     user = get_user(username)
     if not user:
         return None

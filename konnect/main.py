@@ -3,6 +3,7 @@ Main application module for Konnect
 """
 
 from fastapi import FastAPI
+
 from .routers import auth, users
 
 app = FastAPI(
