@@ -144,3 +144,77 @@ def delete_listing(db: Session, listing_id: int) -> bool:
     db_listing.is_active = False
     db.commit()
     return True
+
+
+def create_purchase(
+    db: Session, purchase: schemas.PurchaseCreate, user_id: int
+) -> models.Purchase:
+    """Create a new purchase"""
+    db_purchase = models.Purchase(
+        user_id=user_id,
+        listing_id=purchase.listing_id,
+        amount=purchase.amount,
+        status=purchase.status,
+        transaction_hash=purchase.transaction_hash,
+    )
+    db.add(db_purchase)
+    db.commit()
+    db.refresh(db_purchase)
+    return db_purchase
+
+
+def get_user_purchases(
+    db: Session, user_id: int, skip: int = 0, limit: int = 100
+) -> List[models.Purchase]:
+    """Get purchase history for a user"""
+    return (
+        db.query(models.Purchase)
+        .filter(models.Purchase.user_id == user_id)
+        .order_by(models.Purchase.created_at.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+
+
+def create_browsing_history(
+    db: Session, browsing_history: schemas.BrowsingHistoryCreate, user_id: int
+) -> models.BrowsingHistory:
+    """Create a browsing history entry"""
+    db_browsing_history = models.BrowsingHistory(
+        user_id=user_id,
+        listing_id=browsing_history.listing_id,
+        action=browsing_history.action,
+    )
+    db.add(db_browsing_history)
+    db.commit()
+    db.refresh(db_browsing_history)
+    return db_browsing_history
+
+
+def get_user_browsing_history(
+    db: Session, user_id: int, skip: int = 0, limit: int = 100
+) -> List[models.BrowsingHistory]:
+    """Get browsing history for a user"""
+    return (
+        db.query(models.BrowsingHistory)
+        .filter(models.BrowsingHistory.user_id == user_id)
+        .order_by(models.BrowsingHistory.created_at.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+
+
+def get_user_activity(
+    db: Session, user_id: int, limit: int = 50
+) -> schemas.UserActivity:
+    """Get user activity including purchases and browsing history"""
+    purchases = get_user_purchases(db, user_id, limit=limit)
+    browsing_history = get_user_browsing_history(db, user_id, limit=limit)
+    
+    return schemas.UserActivity(
+        user_id=user_id,
+        purchases=purchases,
+        browsing_history=browsing_history
+    )

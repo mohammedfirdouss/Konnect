@@ -128,3 +128,58 @@ class UserWithDetails(User):
     """User schema with marketplaces and listings"""
     marketplaces: List[Marketplace] = []
     listings: List[Listing] = []
+
+
+# Purchase schemas
+class PurchaseBase(BaseModel):
+    """Base purchase schema"""
+    amount: float
+    status: Optional[str] = "pending"
+    transaction_hash: Optional[str] = None
+
+
+class PurchaseCreate(PurchaseBase):
+    """Purchase creation schema"""
+    listing_id: int
+
+
+class Purchase(PurchaseBase):
+    """Purchase response schema"""
+    id: int
+    user_id: int
+    listing_id: int
+    created_at: datetime
+    updated_at: datetime
+    
+    model_config = ConfigDict(from_attributes=True)
+
+
+# Browsing History schemas
+class BrowsingHistoryBase(BaseModel):
+    """Base browsing history schema"""
+    action: str  # view, search, favorite, share
+
+
+class BrowsingHistoryCreate(BrowsingHistoryBase):
+    """Browsing history creation schema"""
+    listing_id: int
+
+
+class BrowsingHistory(BrowsingHistoryBase):
+    """Browsing history response schema"""
+    id: int
+    user_id: int
+    listing_id: int
+    created_at: datetime
+    
+    model_config = ConfigDict(from_attributes=True)
+
+
+# User Activity schemas
+class UserActivity(BaseModel):
+    """User activity aggregation schema"""
+    user_id: int
+    purchases: List[Purchase] = []
+    browsing_history: List[BrowsingHistory] = []
+    
+    model_config = ConfigDict(from_attributes=True)

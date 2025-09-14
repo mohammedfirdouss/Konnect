@@ -24,6 +24,8 @@ class User(Base):
     # Relationships
     marketplaces = relationship("Marketplace", back_populates="owner")
     listings = relationship("Listing", back_populates="user")
+    purchases = relationship("Purchase", back_populates="user")
+    browsing_history = relationship("BrowsingHistory", back_populates="user")
 
 
 class Marketplace(Base):
@@ -61,3 +63,38 @@ class Listing(Base):
     # Relationships
     marketplace = relationship("Marketplace", back_populates="listings")
     user = relationship("User", back_populates="listings")
+    purchases = relationship("Purchase", back_populates="listing")
+    browsing_history = relationship("BrowsingHistory", back_populates="listing")
+
+
+class Purchase(Base):
+    """Purchase/Transaction model for tracking user purchases"""
+    __tablename__ = "purchases"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    listing_id = Column(Integer, ForeignKey("listings.id"), nullable=False)
+    amount = Column(Float, nullable=False)
+    status = Column(String(50), default="pending")  # pending, completed, failed, cancelled
+    transaction_hash = Column(String(255), nullable=True)  # Solana transaction hash
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    user = relationship("User", back_populates="purchases")
+    listing = relationship("Listing", back_populates="purchases")
+
+
+class BrowsingHistory(Base):
+    """User browsing history model"""
+    __tablename__ = "browsing_history"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    listing_id = Column(Integer, ForeignKey("listings.id"), nullable=False)
+    action = Column(String(50), nullable=False)  # view, search, favorite, share
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    user = relationship("User", back_populates="browsing_history")
+    listing = relationship("Listing", back_populates="browsing_history")

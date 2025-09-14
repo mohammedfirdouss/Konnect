@@ -5,7 +5,7 @@ Main application module for Konnect
 from fastapi import FastAPI
 
 from .database import create_tables
-from .routers import auth, users, listings
+from .routers import auth, users, listings, agent
 
 app = FastAPI(
     title="Konnect", description="Campus Tools with SolanaPay", version="0.1.0"
@@ -21,6 +21,7 @@ async def startup_event():
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(listings.router)
+app.include_router(agent.router)
 
 
 @app.get("/")
