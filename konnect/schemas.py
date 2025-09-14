@@ -137,5 +137,68 @@ class RecommendationResponse(BaseModel):
     listing_ids: List[int]
     cached_at: Optional[datetime] = None
     expires_at: Optional[datetime] = None
+=======
+# Purchase schemas
+class PurchaseBase(BaseModel):
+    """Base purchase schema"""
+    listing_id: int
+    amount: float
+    payment_method: Optional[str] = None
+
+
+class PurchaseCreate(PurchaseBase):
+    """Purchase creation schema"""
+    pass
+
+
+class PurchaseUpdate(BaseModel):
+    """Purchase update schema"""
+    status: Optional[str] = None
+    transaction_hash: Optional[str] = None
+
+
+class Purchase(PurchaseBase):
+    """Purchase response schema"""
+    id: int
+    user_id: int
+    status: str
+    transaction_hash: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+    
+    model_config = ConfigDict(from_attributes=True)
+
+
+# User Activity schemas
+class UserActivityBase(BaseModel):
+    """Base user activity schema"""
+    activity_type: str
+    target_id: Optional[int] = None
+    target_type: Optional[str] = None
+    activity_data: Optional[str] = None
+
+
+class UserActivityCreate(UserActivityBase):
+    """User activity creation schema"""
+    pass
+
+
+class UserActivity(UserActivityBase):
+    """User activity response schema"""
+    id: int
+    user_id: int
+    created_at: datetime
+    
+    model_config = ConfigDict(from_attributes=True)
+
+
+# Enhanced schemas with activity data
+class UserActivitySummary(BaseModel):
+    """Summary of user activity"""
+    total_purchases: int
+    total_spent: float
+    recent_purchases: List[Purchase] = []
+    recent_activities: List[UserActivity] = []
+    favorite_categories: List[str] = []
     
     model_config = ConfigDict(from_attributes=True)
