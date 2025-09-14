@@ -130,6 +130,14 @@ class UserWithDetails(User):
     listings: List[Listing] = []
 
 
+# Recommendation schemas
+class RecommendationResponse(BaseModel):
+    """Response schema for user recommendations"""
+    user_id: int
+    listing_ids: List[int]
+    cached_at: Optional[datetime] = None
+    expires_at: Optional[datetime] = None
+=======
 # Purchase schemas
 class PurchaseBase(BaseModel):
     """Base purchase schema"""
