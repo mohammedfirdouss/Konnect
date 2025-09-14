@@ -32,19 +32,6 @@ def get_db() -> Generator[Session, None, None]:
         yield db
     finally:
         db.close()
-    hashed_password = get_password_hash(user.password)
-    db_user = UserInDB(
-        id=user_id_counter,
-        username=user.username,
-        email=user.email,
-        full_name=user.full_name,
-        hashed_password=hashed_password,
-        is_active=True,
-    )
-    fake_users_db[user.username] = db_user
-    user_id_counter += 1
-    return db_user
-
 
 
 def create_tables():
