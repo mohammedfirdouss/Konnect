@@ -6,10 +6,119 @@ suggestions for students on the campus marketplace platform using Google ADK.
 """
 
 from typing import Any, Dict, List, Optional
+import sys
+import os
 
-from google.adk import Agent, Runner
-from google.adk.sessions.in_memory_session_service import InMemorySessionService
-from google.genai import types
+# Add the project root to the Python path for database access
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+
+from konnect.database import SessionLocal
+from konnect import crud
+
+# Try to import Google ADK, but gracefully handle if not available
+try:
+    from google.adk import Agent, Runner
+    from google.adk.sessions.in_memory_session_service import InMemorySessionService
+    from google.genai import types
+    ADK_AVAILABLE = True
+except ImportError:
+    ADK_AVAILABLE = False
+    # Create mock classes for testing when ADK is not available
+    class Agent:
+        def __init__(self, *args, **kwargs):
+            pass
+    
+    class Runner:
+        def __init__(self, *args, **kwargs):
+            pass
+        
+        def run(self, *args, **kwargs):
+            return []
+    
+    class InMemorySessionService:
+        def create_session(self, *args, **kwargs):
+            class MockSession:
+                id = "mock_session"
+            return MockSession()
+
+
+def get_user_activity(user_id: int) -> Dict[str, Any]:
+    """Get user activity and purchase history from the database.
+
+    This function queries the application's database to fetch comprehensive
+    user activity data including purchase history, browsing patterns, and
+    preferences to help the agent provide personalized recommendations.
+
+    Args:
+        user_id: The ID of the user to get activity for
+
+    Returns:
+        A dictionary containing user activity summary with:
+        - total_purchases: Number of completed purchases
+        - total_spent: Total amount spent on purchases
+        - recent_purchases: List of recent purchase records
+        - recent_activities: List of recent user activities (views, searches)
+        - favorite_categories: Most frequently purchased categories
+        - recent_views: Recent items viewed by the user
+        - recent_searches: Recent search queries by the user
+    """
+    db = SessionLocal()
+    try:
+        return get_user_activity_with_db(db, user_id)
+    finally:
+        db.close()
+
+
+def get_user_activity_with_db(db, user_id: int) -> Dict[str, Any]:
+    """Get user activity with a provided database session.
+    
+    This version is more testable as it accepts a database session.
+    """
+    activity_data = crud.get_user_activity_summary(db, user_id)
+    
+    # Convert database objects to simple dictionaries for the agent
+    result = {
+        "user_id": activity_data["user_id"],
+        "total_purchases": activity_data["total_purchases"],
+        "total_spent": activity_data["total_spent"],
+        "favorite_categories": activity_data["favorite_categories"],
+        "recent_purchases": [
+            {
+                "id": p.id,
+                "listing_id": p.listing_id,
+                "amount": p.amount,
+                "status": p.status,
+                "created_at": p.created_at.isoformat(),
+            }
+            for p in activity_data["recent_purchases"]
+        ],
+        "recent_activities": [
+            {
+                "activity_type": a.activity_type,
+                "target_id": a.target_id,
+                "target_type": a.target_type,
+                "created_at": a.created_at.isoformat(),
+            }
+            for a in activity_data["recent_activities"]
+        ],
+        "recent_views": [
+            {
+                "target_id": a.target_id,
+                "target_type": a.target_type,
+                "created_at": a.created_at.isoformat(),
+            }
+            for a in activity_data["recent_views"]
+        ],
+        "recent_searches": [
+            {
+                "activity_data": a.activity_data,
+                "created_at": a.created_at.isoformat(),
+            }
+            for a in activity_data["recent_searches"]
+        ],
+    }
+    
+    return result
 
 
 def get_popular_items() -> List[Dict[str, Any]]:
@@ -113,36 +222,49 @@ class RecommendationAgent:
         Args:
             model: The Google GenAI model to use for recommendations
         """
+        if not ADK_AVAILABLE:
+            print("Warning: Google ADK not available. Agent will run in mock mode.")
+        
         self.agent = Agent(
             model=model,
             name="konnect_recommendation_agent",
             instruction="""
             You are a helpful recommendation agent for Konnect, a campus marketplace platform
             where students can buy and sell items to each other. Your role is to provide
-            personalized recommendations based on user queries.
+            personalized recommendations based on user queries and their activity history.
 
             Guidelines:
             - Always be helpful and student-friendly
             - Consider budget constraints - students typically have limited budgets
             - Prioritize items that are popular among students
+            - Use user purchase history and preferences to personalize recommendations
             - Suggest alternatives when exact matches aren't available
             - Explain why you're recommending specific items
-            - Use the available tools to get current marketplace data
+            - Use the available tools to get current marketplace data and user activity
             - Format responses in a clear, easy-to-read way
             - Always mention prices when recommending items
             - Suggest both individual items and bundles when appropriate
 
+            Available Tools:
+            1. get_popular_items() - Get trending items on the marketplace
+            2. search_items_by_category(category) - Find items in specific categories
+            3. get_price_range_items(min_price, max_price) - Find items within budget
+            4. get_user_activity(user_id) - Get user's purchase history and preferences
+
             When users ask for recommendations:
-            1. Use get_popular_items() to see what's trending
-            2. Use search_items_by_category() for specific categories
-            3. Use get_price_range_items() for budget-conscious searches
-            4. Provide 3-5 recommendations with explanations
-            5. Include prices and brief descriptions
+            1. If you have a user_id, use get_user_activity() to understand their preferences
+            2. Use get_popular_items() to see what's trending
+            3. Use search_items_by_category() for specific categories
+            4. Use get_price_range_items() for budget-conscious searches
+            5. Provide 3-5 personalized recommendations with explanations
+            6. Include prices and brief descriptions
+            7. Reference their past purchases or interests when relevant
             """,
             tools=[
                 get_popular_items,
                 search_items_by_category,
                 get_price_range_items,
+                get_user_activity,
             ],
             generate_content_config=types.GenerateContentConfig(
                 safety_settings=[
@@ -159,21 +281,26 @@ class RecommendationAgent:
                 top_p=0.9,
                 max_output_tokens=1000,
             ),
-        )
+        ) if ADK_AVAILABLE else None
 
-        # Create a runner to execute the agent
-        self.session_service = InMemorySessionService()
-        self.runner = Runner(
-            app_name="konnect_recommendations",
-            agent=self.agent,
-            session_service=self.session_service,
-        )
+        if ADK_AVAILABLE:
+            # Create a runner to execute the agent
+            self.session_service = InMemorySessionService()
+            self.runner = Runner(
+                app_name="konnect_recommendations",
+                agent=self.agent,
+                session_service=self.session_service,
+            )
 
-        # Create a session for interactions
-        self.session_id = self.session_service.create_session(
-            app_name="konnect_recommendations",
-            user_id="default_user",
-        ).id
+            # Create a session for interactions
+            self.session_id = self.session_service.create_session(
+                app_name="konnect_recommendations",
+                user_id="default_user",
+            ).id
+        else:
+            self.session_service = None
+            self.runner = None
+            self.session_id = None
 
     def get_recommendations(self, query: str) -> str:
         """Get recommendations based on user query.
@@ -184,6 +311,9 @@ class RecommendationAgent:
         Returns:
             AI-generated recommendations as a string
         """
+        if not ADK_AVAILABLE:
+            return "Mock recommendation: Google ADK not available. In a real environment, this would provide personalized recommendations based on the query."
+        
         try:
             # Create a user message content
             user_message = types.Content(
@@ -238,6 +368,23 @@ class RecommendationAgent:
         """
         query = f"I'm looking for items between ${min_price} and ${max_price}"
         return self.get_recommendations(query)
+
+    def get_personalized_recommendations(self, user_id: int, query: str = "") -> str:
+        """Get personalized recommendations based on user activity.
+
+        Args:
+            user_id: The user ID to get recommendations for
+            query: Optional additional query text
+
+        Returns:
+            AI-generated personalized recommendations
+        """
+        if query:
+            full_query = f"User ID {user_id}: {query}. Please provide personalized recommendations."
+        else:
+            full_query = f"User ID {user_id}: Please provide personalized recommendations based on my activity history."
+        
+        return self.get_recommendations(full_query)
 
 
 # Factory function for easy agent creation

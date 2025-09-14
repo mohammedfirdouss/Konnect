@@ -24,6 +24,8 @@ class User(Base):
     # Relationships
     marketplaces = relationship("Marketplace", back_populates="owner")
     listings = relationship("Listing", back_populates="user")
+    purchases = relationship("Purchase", back_populates="user")
+    activities = relationship("UserActivity", back_populates="user")
 
 
 class Marketplace(Base):
@@ -61,3 +63,39 @@ class Listing(Base):
     # Relationships
     marketplace = relationship("Marketplace", back_populates="listings")
     user = relationship("User", back_populates="listings")
+    purchases = relationship("Purchase", back_populates="listing")
+
+
+class Purchase(Base):
+    """Purchase/Transaction model for tracking user purchases"""
+    __tablename__ = "purchases"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    listing_id = Column(Integer, ForeignKey("listings.id"), nullable=False)
+    amount = Column(Float, nullable=False)
+    status = Column(String(50), default="pending")  # pending, completed, cancelled
+    payment_method = Column(String(50), nullable=True)  # solana, other
+    transaction_hash = Column(String(255), nullable=True)  # Solana transaction hash
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    user = relationship("User", back_populates="purchases")
+    listing = relationship("Listing", back_populates="purchases")
+
+
+class UserActivity(Base):
+    """User activity model for tracking browsing and interaction history"""
+    __tablename__ = "user_activities"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    activity_type = Column(String(50), nullable=False)  # view, search, purchase, message
+    target_id = Column(Integer, nullable=True)  # listing_id, marketplace_id, etc.
+    target_type = Column(String(50), nullable=True)  # listing, marketplace, user
+    activity_data = Column(Text, nullable=True)  # JSON string for additional data
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    user = relationship("User", back_populates="activities")
