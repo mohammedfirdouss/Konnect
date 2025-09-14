@@ -1,8 +1,10 @@
 """CRUD operations for database models"""
 
 from typing import Optional, List
+from collections import Counter
 
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 
 from . import models, schemas
 from .auth import get_password_hash, verify_password
@@ -144,3 +146,116 @@ def delete_listing(db: Session, listing_id: int) -> bool:
     db_listing.is_active = False
     db.commit()
     return True
+
+
+def create_purchase(
+    db: Session, purchase: schemas.PurchaseCreate, user_id: int
+) -> models.Purchase:
+    """Create a new purchase"""
+    db_purchase = models.Purchase(
+        user_id=user_id,
+        listing_id=purchase.listing_id,
+        amount=purchase.amount,
+        payment_method=purchase.payment_method,
+    )
+    db.add(db_purchase)
+    db.commit()
+    db.refresh(db_purchase)
+    return db_purchase
+
+
+def get_purchase(db: Session, purchase_id: int) -> Optional[models.Purchase]:
+    """Get purchase by ID"""
+    return db.query(models.Purchase).filter(models.Purchase.id == purchase_id).first()
+
+
+def get_user_purchases(
+    db: Session, user_id: int, skip: int = 0, limit: int = 100
+) -> List[models.Purchase]:
+    """Get all purchases for a user"""
+    return (
+        db.query(models.Purchase)
+        .filter(models.Purchase.user_id == user_id)
+        .order_by(models.Purchase.created_at.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+
+
+def create_user_activity(
+    db: Session, activity: schemas.UserActivityCreate, user_id: int
+) -> models.UserActivity:
+    """Create a new user activity record"""
+    db_activity = models.UserActivity(
+        user_id=user_id,
+        activity_type=activity.activity_type,
+        target_id=activity.target_id,
+        target_type=activity.target_type,
+        activity_data=activity.activity_data,
+    )
+    db.add(db_activity)
+    db.commit()
+    db.refresh(db_activity)
+    return db_activity
+
+
+def get_user_activities(
+    db: Session, user_id: int, skip: int = 0, limit: int = 100
+) -> List[models.UserActivity]:
+    """Get all activities for a user"""
+    return (
+        db.query(models.UserActivity)
+        .filter(models.UserActivity.user_id == user_id)
+        .order_by(models.UserActivity.created_at.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+
+
+def get_user_activity_summary(db: Session, user_id: int) -> dict:
+    """Get comprehensive user activity summary for agent recommendations"""
+    # Get user purchases
+    purchases = get_user_purchases(db, user_id, limit=50)
+    
+    # Get user activities
+    activities = get_user_activities(db, user_id, limit=100)
+    
+    # Calculate summary statistics
+    total_purchases = len(purchases)
+    total_spent = sum(p.amount for p in purchases if p.status == "completed")
+    
+    # Get favorite categories from purchases
+    if purchases:
+        # Get listings for completed purchases
+        completed_purchases = [p for p in purchases if p.status == "completed"]
+        if completed_purchases:
+            listing_ids = [p.listing_id for p in completed_purchases]
+            listings = (
+                db.query(models.Listing)
+                .filter(models.Listing.id.in_(listing_ids))
+                .all()
+            )
+            categories = [l.category for l in listings if l.category]
+            category_counts = Counter(categories)
+            favorite_categories = [cat for cat, count in category_counts.most_common(5)]
+        else:
+            favorite_categories = []
+    else:
+        favorite_categories = []
+    
+    # Get recent activity summary
+    recent_views = [a for a in activities if a.activity_type == "view"][:10]
+    recent_searches = [a for a in activities if a.activity_type == "search"][:10]
+    
+    return {
+        "user_id": user_id,
+        "total_purchases": total_purchases,
+        "total_spent": total_spent,
+        "recent_purchases": purchases[:10],
+        "recent_activities": activities[:20],
+        "favorite_categories": favorite_categories,
+        "recent_views": recent_views,
+        "recent_searches": recent_searches,
+    }
