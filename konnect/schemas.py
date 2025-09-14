@@ -128,3 +128,14 @@ class UserWithDetails(User):
     """User schema with marketplaces and listings"""
     marketplaces: List[Marketplace] = []
     listings: List[Listing] = []
+
+
+# Recommendation schemas
+class RecommendationResponse(BaseModel):
+    """Response schema for user recommendations"""
+    user_id: int
+    listing_ids: List[int]
+    cached_at: Optional[datetime] = None
+    expires_at: Optional[datetime] = None
+    
+    model_config = ConfigDict(from_attributes=True)
