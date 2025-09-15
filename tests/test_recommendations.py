@@ -26,14 +26,14 @@ class TestRecommendationsEndpoint:
 
     def test_recommendation_response_schema(self):
         """Test that the RecommendationResponse schema works correctly"""
-        from datetime import datetime
+        from datetime import UTC, datetime
 
         # Test schema validation
         response_data = {
             "user_id": 1,
             "listing_ids": [1, 2, 3, 4, 5],
-            "cached_at": datetime.utcnow(),
-            "expires_at": datetime.utcnow(),
+            "cached_at": datetime.now(UTC),
+            "expires_at": datetime.now(UTC),
         }
 
         response = RecommendationResponse(**response_data)

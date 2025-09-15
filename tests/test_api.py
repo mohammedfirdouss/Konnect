@@ -12,7 +12,6 @@ def test_root_endpoint():
     assert data["message"] == "Welcome to Konnect - Campus Tools with SolanaPay"
 
 
-
 def test_health_endpoint():
     response = client.get("/health")
     assert response.status_code == 200

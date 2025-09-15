@@ -10,45 +10,45 @@ jobs:
   lint-and-format:
     runs-on: ubuntu-latest
     name: Lint and Format with Ruff
-    
+
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.12'
-    
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install poetry
         poetry install --with dev
-    
+
     - name: Run Ruff linter
       run: poetry run ruff check .
-    
+
     - name: Run Ruff formatter
       run: poetry run ruff format --check .
 
   test:
     runs-on: ubuntu-latest
     name: Run Tests with Pytest
-    
+
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.12'
-    
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install poetry
         poetry install --with dev
-    
+
     - name: Run tests with pytest
       run: poetry run pytest
 
@@ -56,13 +56,13 @@ jobs:
     runs-on: ubuntu-latest
     name: Build Docker Image
     needs: [lint-and-format, test]
-    
+
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
-    
+
     - name: Build Docker image
       uses: docker/build-push-action@v5
       with:
@@ -73,7 +73,7 @@ jobs:
         tags: konnect:latest
         cache-from: type=gha
         cache-to: type=gha,mode=max
-    
+
     - name: Test Docker image
       run: |
         docker run --rm -d --name konnect-test -p 8000:8000 konnect:latest

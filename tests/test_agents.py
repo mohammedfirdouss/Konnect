@@ -124,7 +124,9 @@ class TestRecommendationAgent:
         """Test agent initialization with custom model."""
         with patch("konnect.agents.recommendation.ADK_AVAILABLE", True), patch(
             "konnect.agents.recommendation.InMemorySessionService"
-        ) as mock_session_service_class, patch("konnect.agents.recommendation.Runner") as mock_runner_class, patch(
+        ) as mock_session_service_class, patch(
+            "konnect.agents.recommendation.Runner"
+        ) as mock_runner_class, patch(
             "konnect.agents.recommendation.Agent"
         ) as mock_agent_class, patch(
             "asyncio.run"
@@ -152,7 +154,9 @@ class TestRecommendationAgent:
         """Test successful recommendation generation."""
         with patch("konnect.agents.recommendation.ADK_AVAILABLE", True), patch(
             "konnect.agents.recommendation.InMemorySessionService"
-        ) as mock_session_service_class, patch("konnect.agents.recommendation.Runner") as mock_runner_class, patch(
+        ) as mock_session_service_class, patch(
+            "konnect.agents.recommendation.Runner"
+        ) as mock_runner_class, patch(
             "konnect.agents.recommendation.Agent"
         ) as mock_agent_class, patch(
             "asyncio.run"
@@ -185,7 +189,9 @@ class TestRecommendationAgent:
         """Test error handling in recommendation generation."""
         with patch("konnect.agents.recommendation.ADK_AVAILABLE", True), patch(
             "konnect.agents.recommendation.InMemorySessionService"
-        ) as mock_session_service_class, patch("konnect.agents.recommendation.Runner") as mock_runner_class, patch(
+        ) as mock_session_service_class, patch(
+            "konnect.agents.recommendation.Runner"
+        ) as mock_runner_class, patch(
             "konnect.agents.recommendation.Agent"
         ) as mock_agent_class, patch(
             "asyncio.run"
@@ -214,7 +220,9 @@ class TestRecommendationAgent:
         """Test category-specific recommendations."""
         with patch("konnect.agents.recommendation.ADK_AVAILABLE", True), patch(
             "konnect.agents.recommendation.InMemorySessionService"
-        ) as mock_session_service_class, patch("konnect.agents.recommendation.Runner") as mock_runner_class, patch(
+        ) as mock_session_service_class, patch(
+            "konnect.agents.recommendation.Runner"
+        ) as mock_runner_class, patch(
             "konnect.agents.recommendation.Agent"
         ) as mock_agent_class, patch(
             "asyncio.run"
@@ -251,7 +259,9 @@ class TestRecommendationAgent:
         """Test budget-based recommendations."""
         with patch("konnect.agents.recommendation.ADK_AVAILABLE", True), patch(
             "konnect.agents.recommendation.InMemorySessionService"
-        ) as mock_session_service_class, patch("konnect.agents.recommendation.Runner") as mock_runner_class, patch(
+        ) as mock_session_service_class, patch(
+            "konnect.agents.recommendation.Runner"
+        ) as mock_runner_class, patch(
             "konnect.agents.recommendation.Agent"
         ) as mock_agent_class, patch(
             "asyncio.run"
@@ -287,7 +297,9 @@ class TestRecommendationAgent:
     def test_agent_constructor_call(self):
         with patch("konnect.agents.recommendation.ADK_AVAILABLE", True), patch(
             "konnect.agents.recommendation.InMemorySessionService"
-        ) as mock_session_service_class, patch("konnect.agents.recommendation.Runner") as mock_runner_class, patch(
+        ) as mock_session_service_class, patch(
+            "konnect.agents.recommendation.Runner"
+        ), patch(
             "konnect.agents.recommendation.Agent"
         ) as mock_agent_class, patch(
             "asyncio.run"
@@ -306,7 +318,6 @@ class TestRecommendationAgent:
             # Assert that google.adk.Agent was called
             mock_agent_class.assert_called_once()
             call_args = mock_agent_class.call_args
-            print(f"Agent call_args: {call_args}")
 
             # Verify the arguments passed to google.adk.Agent
             assert "model" in call_args.kwargs

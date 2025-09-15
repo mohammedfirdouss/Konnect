@@ -65,6 +65,12 @@ def sample_listing(db_session, sample_user, sample_marketplace):
     return crud.create_listing(db_session, listing_data, sample_user.id)
 
 
+@pytest.fixture
+def mock_adk(monkeypatch):
+    """Mock the ADK_AVAILABLE flag to disable real API calls"""
+    monkeypatch.setattr("konnect.agents.recommendation.ADK_AVAILABLE", False)
+
+
 def test_create_purchase(db_session, sample_user, sample_listing):
     """Test purchase creation"""
     purchase_data = schemas.PurchaseCreate(
@@ -207,7 +213,7 @@ def test_get_user_activity_function(db_session, sample_user, sample_listing):
     assert result["recent_activities"][0]["activity_type"] == "view"
 
 
-def test_recommendation_agent_initialization():
+def test_recommendation_agent_initialization(mock_adk):
     """Test that the recommendation agent initializes correctly"""
     agent = RecommendationAgent()
 
@@ -218,15 +224,17 @@ def test_recommendation_agent_initialization():
     response = agent.get_recommendations("I need a laptop for studying")
     assert isinstance(response, str)
     assert len(response) > 0
+    assert "Mock recommendation" in response
 
 
-def test_personalized_recommendations():
+def test_personalized_recommendations(mock_adk):
     """Test personalized recommendations method"""
     agent = RecommendationAgent()
 
     response = agent.get_personalized_recommendations(1, "I need study materials")
     assert isinstance(response, str)
     assert len(response) > 0
+    assert "Mock recommendation" in response
 
 
 def test_user_relationships(db_session, sample_user, sample_listing):
