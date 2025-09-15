@@ -27,6 +27,11 @@ class User(Base):
     email = Column(String(255), unique=True, index=True, nullable=False)
     full_name = Column(String(255), nullable=True)
     hashed_password = Column(String(255), nullable=False)
+    role = Column(String(20), default="buyer")  # buyer, seller, admin
+    is_verified_seller = Column(Boolean, default=False)
+    verification_nft_mint = Column(
+        String(255), nullable=True
+    )  # Solana NFT mint address
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(
@@ -40,6 +45,12 @@ class User(Base):
     listings = relationship("Listing", back_populates="user")
     purchases = relationship("Purchase", back_populates="user")
     activities = relationship("UserActivity", back_populates="user")
+    orders_as_buyer = relationship(
+        "Order", foreign_keys="Order.buyer_id", back_populates="buyer"
+    )
+    orders_as_seller = relationship(
+        "Order", foreign_keys="Order.seller_id", back_populates="seller"
+    )
 
 
 class Marketplace(Base):
@@ -131,3 +142,70 @@ class UserActivity(Base):
 
     # Relationships
     user = relationship("User", back_populates="activities")
+
+
+class Order(Base):
+    """Order model for managing purchases with escrow"""
+
+    __tablename__ = "orders"
+
+    id = Column(Integer, primary_key=True, index=True)
+    buyer_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    seller_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    listing_id = Column(Integer, ForeignKey("listings.id"), nullable=False)
+    quantity = Column(Integer, default=1)
+    total_amount = Column(Float, nullable=False)
+    delivery_address = Column(Text, nullable=True)
+    notes = Column(Text, nullable=True)
+    escrow_tx_hash = Column(String(255), nullable=True)  # Solana escrow transaction
+    status = Column(
+        String(20), default="pending"
+    )  # pending, paid, shipped, delivered, disputed, cancelled, completed
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    # Relationships
+    buyer = relationship(
+        "User", foreign_keys=[buyer_id], back_populates="orders_as_buyer"
+    )
+    seller = relationship(
+        "User", foreign_keys=[seller_id], back_populates="orders_as_seller"
+    )
+    listing = relationship("Listing", back_populates="orders")
+
+
+class MarketplaceRequest(Base):
+    """Marketplace creation request model"""
+
+    __tablename__ = "marketplace_requests"
+
+    id = Column(Integer, primary_key=True, index=True)
+    university_name = Column(String(255), nullable=False)
+    university_domain = Column(String(255), nullable=False)
+    contact_email = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
+    status = Column(String(20), default="pending")  # pending, approved, rejected
+    requested_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    smart_contract_tx_hash = Column(String(255), nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    # Relationships
+    requester = relationship("User", back_populates="marketplace_requests")
+
+
+# Add marketplace_requests relationship to User
+User.marketplace_requests = relationship(
+    "MarketplaceRequest", back_populates="requester"
+)
+
+# Add orders relationship to Listing
+Listing.orders = relationship("Order", back_populates="listing")

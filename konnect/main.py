@@ -3,6 +3,7 @@ Main application module for Konnect
 """
 
 import logging
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Response
 from opentelemetry import metrics, trace
@@ -14,7 +15,7 @@ from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from pythonjsonlogger import jsonlogger
 
 from .database import create_tables
-from .routers import auth, listings, users
+from .routers import admin, ai, auth, listings, marketplaces, orders, products, users
 
 # Configure OpenTelemetry Metrics
 prometheus_reader = PrometheusMetricReader()
@@ -49,27 +50,36 @@ def setup_logging():
 # Setup logging
 logger = setup_logging()
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Initialize database tables on startup"""
+    logger.info("Starting up Konnect application")
+    create_tables()
+    logger.info("Database tables created successfully")
+    yield
+
+
 app = FastAPI(
-    title="Konnect", description="Campus Tools with SolanaPay", version="0.1.0"
+    title="Konnect",
+    description="Campus Tools with SolanaPay",
+    version="0.1.0",
+    lifespan=lifespan,
 )
 
 # Instrument FastAPI with OpenTelemetry
 FastAPIInstrumentor.instrument_app(app)
 
 
-# Create database tables on startup
-@app.on_event("startup")
-async def startup_event():
-    """Initialize database tables on startup"""
-    logger.info("Starting up Konnect application")
-    create_tables()
-    logger.info("Database tables created successfully")
-
-
 # Include routers
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(listings.router)
+app.include_router(marketplaces.router)
+app.include_router(products.router)
+app.include_router(orders.router)
+app.include_router(ai.router)
+app.include_router(admin.router)
 
 
 @app.get("/")

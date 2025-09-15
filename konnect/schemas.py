@@ -229,3 +229,185 @@ class UserActivitySummary(BaseModel):
     favorite_categories: List[str] = []
 
     model_config = ConfigDict(from_attributes=True)
+
+
+# Order/Escrow schemas
+class OrderBase(BaseModel):
+    """Base order schema"""
+
+    listing_id: int
+    quantity: int = 1
+    delivery_address: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class OrderCreate(OrderBase):
+    """Order creation schema"""
+
+    pass
+
+
+class OrderUpdate(BaseModel):
+    """Order update schema"""
+
+    status: Optional[str] = None
+    delivery_address: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class Order(OrderBase):
+    """Order response schema"""
+
+    id: int
+    buyer_id: int
+    seller_id: int
+    total_amount: float
+    escrow_tx_hash: Optional[str] = None
+    status: str  # pending, paid, shipped, delivered, disputed, cancelled, completed
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# Admin schemas
+class SellerVerificationRequest(BaseModel):
+    """Seller verification request"""
+
+    seller_id: int
+
+
+class SellerVerificationResponse(BaseModel):
+    """Seller verification response"""
+
+    seller_id: int
+    verified: bool
+    nft_mint_tx_hash: Optional[str] = None
+    verified_at: Optional[datetime] = None
+
+
+class PendingSeller(BaseModel):
+    """Pending seller for verification"""
+
+    id: int
+    username: str
+    email: str
+    full_name: Optional[str] = None
+    created_at: datetime
+    total_listings: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class AdminStats(BaseModel):
+    """Admin dashboard statistics"""
+
+    total_users: int
+    total_sellers: int
+    verified_sellers: int
+    pending_sellers: int
+    total_listings: int
+    active_listings: int
+    total_orders: int
+    disputed_orders: int
+
+
+# AI Insights schemas
+class SellerInsights(BaseModel):
+    """Seller insights response"""
+
+    seller_id: int
+    total_sales: int
+    total_revenue: float
+    average_order_value: float
+    top_products: List[dict] = []
+    sales_trend: List[dict] = []
+    customer_satisfaction: float
+    recommendations: List[str] = []
+
+
+class AIRecommendation(BaseModel):
+    """AI-powered recommendation"""
+
+    listing_id: int
+    title: str
+    price: float
+    category: Optional[str] = None
+    confidence_score: float
+    reason: str
+
+
+class AIRecommendationsResponse(BaseModel):
+    """AI recommendations response"""
+
+    user_id: int
+    recommendations: List[AIRecommendation] = []
+    generated_at: datetime
+
+
+# Product search schemas
+class ProductSearchFilters(BaseModel):
+    """Product search filters"""
+
+    query: Optional[str] = None
+    category: Optional[str] = None
+    min_price: Optional[float] = None
+    max_price: Optional[float] = None
+    marketplace_id: Optional[int] = None
+    verified_sellers_only: bool = False
+    sort_by: Optional[
+        str
+    ] = "relevance"  # relevance, price_asc, price_desc, newest, oldest
+
+
+class ProductSearchResult(BaseModel):
+    """Product search result"""
+
+    id: int
+    title: str
+    description: Optional[str] = None
+    price: float
+    category: Optional[str] = None
+    marketplace_id: int
+    marketplace_name: str
+    seller_id: int
+    seller_username: str
+    seller_verified: bool
+    created_at: datetime
+    relevance_score: Optional[float] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ProductSearchResponse(BaseModel):
+    """Product search response"""
+
+    results: List[ProductSearchResult] = []
+    total_count: int
+    page: int
+    page_size: int
+    total_pages: int
+    filters_applied: ProductSearchFilters
+
+
+# Marketplace request schemas
+class MarketplaceRequest(BaseModel):
+    """Marketplace creation request"""
+
+    university_name: str
+    university_domain: str
+    contact_email: str
+    description: Optional[str] = None
+
+
+class MarketplaceRequestResponse(BaseModel):
+    """Marketplace request response"""
+
+    id: int
+    university_name: str
+    status: str  # pending, approved, rejected
+    requested_by: int
+    created_at: datetime
+    smart_contract_tx_hash: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)

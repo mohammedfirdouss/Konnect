@@ -5,7 +5,6 @@ This module implements a recommendation agent that provides personalized
 suggestions for students on the campus marketplace platform using Google ADK.
 """
 
-import asyncio
 import os
 import sys
 from typing import Any, Dict, List, Optional
@@ -13,37 +12,65 @@ from typing import Any, Dict, List, Optional
 # Add the project root to the Python path for database access
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
-from konnect import crud
-from konnect.database import SessionLocal
+# Local imports
+from konnect import crud  # noqa: E402
+from konnect.database import SessionLocal  # noqa: E402
 
-# Try to import Google ADK, but gracefully handle if not available
+# Conditional Google ADK imports
 try:
-    from google.adk import Agent, Runner
-    from google.adk.sessions.in_memory_session_service import InMemorySessionService
-    from google.genai import types
+    from google.adk import Agent, Runner  # noqa: E402
+    from google.adk.sessions.in_memory_session_service import (  # noqa: E402
+        InMemorySessionService,
+    )
+    from google.genai import types  # noqa: E402
 
     ADK_AVAILABLE = True
 except ImportError:
-    ADK_AVAILABLE = False
+    # Create mock classes when ADK is not available
+    ADK_AVAILABLE = False  # noqa: E402
 
-    # Create mock classes for testing when ADK is not available
-    class Agent:
+    class Agent:  # noqa: E402
         def __init__(self, *args, **kwargs):
             pass
 
-    class Runner:
+    class Runner:  # noqa: E402
         def __init__(self, *args, **kwargs):
             pass
 
         def run(self, *args, **kwargs):
             return []
 
-    class InMemorySessionService:
+    class InMemorySessionService:  # noqa: E402
         def create_session(self, *args, **kwargs):
             class MockSession:
                 id = "mock_session"
 
             return MockSession()
+
+    class types:  # noqa: E402
+        class GenerateContentConfig:
+            def __init__(self, **kwargs):
+                pass
+
+        class SafetySetting:
+            def __init__(self, **kwargs):
+                pass
+
+        class Content:
+            def __init__(self, **kwargs):
+                pass
+
+        class Part:
+            @staticmethod
+            def from_text(**kwargs):
+                return None
+
+        class HarmCategory:
+            HARM_CATEGORY_HARASSMENT = "harassment"
+            HARM_CATEGORY_HATE_SPEECH = "hate_speech"
+
+        class HarmBlockThreshold:
+            BLOCK_MEDIUM_AND_ABOVE = "medium_and_above"
 
 
 def get_user_activity(user_id: int) -> Dict[str, Any]:
@@ -237,14 +264,29 @@ class RecommendationAgent:
         if not ADK_AVAILABLE:
             print("Warning: Google ADK not available. Agent will run in mock mode.")
 
-        self.agent = (
-            Agent(
-                model=model,
+        self.model = model
+        self.agent = None
+        self.session_service = None
+        self.runner = None
+        self.session_id = None
+        self._initialized = False
+
+    def _ensure_initialized(self):
+        """Lazy initialization of ADK components to avoid asyncio issues during
+        import."""
+        if self._initialized or not ADK_AVAILABLE:
+            return
+
+        try:
+            # Create the agent
+            self.agent = Agent(
+                model=self.model,
                 name="konnect_recommendation_agent",
-                instruction="""
-            You are a helpful recommendation agent for Konnect, a campus marketplace platform
-            where students can buy and sell items to each other. Your role is to provide
-            personalized recommendations based on user queries and their activity history.
+                instruction="""You are a helpful recommendation agent for Konnect,
+                a campus
+            marketplace platform where students can buy and sell items to each other.
+            Your role is to provide personalized recommendations based on user queries
+            and their activity history.
 
             Guidelines:
             - Always be helpful and student-friendly
@@ -265,14 +307,14 @@ class RecommendationAgent:
             4. get_user_activity(user_id) - Get user's purchase history and preferences
 
             When users ask for recommendations:
-            1. If you have a user_id, use get_user_activity() to understand their preferences
+            1. If you have a user_id, use get_user_activity() to understand
+               their preferences
             2. Use get_popular_items() to see what's trending
             3. Use search_items_by_category() for specific categories
             4. Use get_price_range_items() for budget-conscious searches
             5. Provide 3-5 personalized recommendations with explanations
             6. Include prices and brief descriptions
-            7. Reference their past purchases or interests when relevant
-            """,
+            7. Reference their past purchases or interests when relevant""",
                 tools=[
                     get_popular_items,
                     search_items_by_category,
@@ -295,12 +337,8 @@ class RecommendationAgent:
                     max_output_tokens=1000,
                 ),
             )
-            if ADK_AVAILABLE
-            else None
-        )
 
-        if ADK_AVAILABLE:
-            # Create a runner to execute the agent
+            # Create session service and runner
             self.session_service = InMemorySessionService()
             self.runner = Runner(
                 app_name="konnect_recommendations",
@@ -308,18 +346,13 @@ class RecommendationAgent:
                 session_service=self.session_service,
             )
 
-            # Create a session for interactions
-            session = asyncio.run(
-                self.session_service.create_session(
-                    app_name="konnect_recommendations",
-                    user_id="default_user",
-                )
-            )
-            self.session_id = session.id
-        else:
+            self._initialized = True
+
+        except Exception as e:
+            print(f"Warning: Failed to initialize ADK components: {e}")
+            self.agent = None
             self.session_service = None
             self.runner = None
-            self.session_id = None
 
     def get_recommendations(self, query: str) -> str:
         """Get recommendations based on user query.
@@ -331,7 +364,16 @@ class RecommendationAgent:
             AI-generated recommendations as a string
         """
         if not ADK_AVAILABLE:
-            return "Mock recommendation: Google ADK not available. In a real environment, this would provide personalized recommendations based on the query."
+            return (
+                "Mock recommendation: Google ADK not available. "
+                "In a real environment, this would provide personalized "
+                "recommendations based on the query."
+            )
+
+        self._ensure_initialized()
+
+        if not self.runner:
+            return "Sorry, I couldn't initialize the recommendation system."
 
         try:
             # Create a user message content
@@ -339,6 +381,31 @@ class RecommendationAgent:
                 role="user",
                 parts=[types.Part.from_text(text=query)],
             )
+
+            # Create a session if we don't have one
+            if not self.session_id and self.session_service:
+                import asyncio
+
+                try:
+                    session = asyncio.run(
+                        self.session_service.create_session(
+                            app_name="konnect_recommendations",
+                            user_id="default_user",
+                        )
+                    )
+                    self.session_id = session.id
+                except RuntimeError:
+                    # If we're already in an event loop, create session synchronously
+                    import nest_asyncio
+
+                    nest_asyncio.apply()
+                    session = asyncio.run(
+                        self.session_service.create_session(
+                            app_name="konnect_recommendations",
+                            user_id="default_user",
+                        )
+                    )
+                    self.session_id = session.id
 
             # Run the agent with the query
             events = list(
@@ -359,7 +426,11 @@ class RecommendationAgent:
             return "I apologize, but I couldn't generate recommendations at this time."
 
         except Exception as e:
-            return f"Sorry, I encountered an error while generating recommendations: {str(e)}"
+            error_msg = (
+                "Sorry, I encountered an error while generating recommendations: "
+                f"{str(e)}"
+            )
+            return error_msg
 
     def get_category_recommendations(
         self, category: str, budget: Optional[float] = None
@@ -403,9 +474,15 @@ class RecommendationAgent:
             AI-generated personalized recommendations
         """
         if query:
-            full_query = f"User ID {user_id}: {query}. Please provide personalized recommendations."
+            full_query = (
+                f"User ID {user_id}: {query}. "
+                "Please provide personalized recommendations."
+            )
         else:
-            full_query = f"User ID {user_id}: Please provide personalized recommendations based on my activity history."
+            full_query = (
+                f"User ID {user_id}: Please provide personalized recommendations "
+                "based on my activity history."
+            )
 
         return self.get_recommendations(full_query)
 
@@ -423,3 +500,34 @@ def create_recommendation_agent(
         A configured RecommendationAgent instance
     """
     return RecommendationAgent(model=model)
+
+
+# For ADK CLI compatibility - create a simple agent that can be loaded
+if ADK_AVAILABLE:
+    try:
+        # Create a basic ADK agent for CLI testing
+        root_agent = Agent(
+            model="gemini-2.0-flash-exp",
+            name="konnect_recommendation_agent",
+            instruction="""You are a helpful recommendation agent for Konnect, a campus
+            marketplace platform. Help students find items they're looking for by
+            providing
+            recommendations based on categories, budgets, and popular items.
+
+            Available tools:
+            - get_popular_items(): Get trending items
+            - search_items_by_category(category): Find items by category
+            - get_price_range_items(min_price, max_price): Find items by price range
+            - get_user_activity(user_id): Get user purchase history""",
+            tools=[
+                get_popular_items,
+                search_items_by_category,
+                get_price_range_items,
+                get_user_activity,
+            ],
+        )
+    except Exception as e:
+        print(f"Warning: Could not create ADK agent: {e}")
+        root_agent = None
+else:
+    root_agent = None

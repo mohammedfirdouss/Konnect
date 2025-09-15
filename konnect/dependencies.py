@@ -40,3 +40,25 @@ async def get_current_active_user(
     if not current_user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
+
+
+async def require_admin_role(
+    current_user: User = Depends(get_current_active_user),
+) -> User:
+    """Require admin role for the current user"""
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required"
+        )
+    return current_user
+
+
+async def require_seller_role(
+    current_user: User = Depends(get_current_active_user),
+) -> User:
+    """Require seller role for the current user"""
+    if current_user.role not in ["seller", "admin"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Seller access required"
+        )
+    return current_user
