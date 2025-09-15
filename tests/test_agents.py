@@ -94,7 +94,7 @@ class TestRecommendationAgent:
             mock_session = Mock()
             mock_session.id = "test_session_id"
 
-            mock_asyncio_run.side_effect = [mock_session, None]
+            mock_asyncio_run.return_value = mock_session
 
             mock_agent_class.return_value = mock_agent_instance
             mock_runner_class.return_value = mock_runner_instance
@@ -112,7 +112,7 @@ class TestRecommendationAgent:
             assert call_args.kwargs["name"] == "konnect_recommendation_agent"
             assert "instruction" in call_args.kwargs
             assert "tools" in call_args.kwargs
-            assert len(call_args.kwargs["tools"]) == 3  # Three tool functions
+            assert len(call_args.kwargs["tools"]) == 4  # Four tool functions
 
             # Verify Runner was called
             mock_runner_class.assert_called_once()
@@ -123,9 +123,9 @@ class TestRecommendationAgent:
     def test_custom_model_initialization(self):
         """Test agent initialization with custom model."""
         with patch("konnect.agents.recommendation.ADK_AVAILABLE", True), patch(
-            "google.adk.sessions.in_memory_session_service.InMemorySessionService"
-        ) as mock_session_service_class, patch("google.adk.Runner") as mock_runner_class, patch(
-            "google.adk.Agent"
+            "konnect.agents.recommendation.InMemorySessionService"
+        ) as mock_session_service_class, patch("konnect.agents.recommendation.Runner") as mock_runner_class, patch(
+            "konnect.agents.recommendation.Agent"
         ) as mock_agent_class, patch(
             "asyncio.run"
         ) as mock_asyncio_run:
@@ -135,7 +135,7 @@ class TestRecommendationAgent:
             mock_session = Mock()
             mock_session.id = "test_session_id"
 
-            mock_asyncio_run.side_effect = [mock_session, None]
+            mock_asyncio_run.return_value = mock_session
 
             mock_agent_class.return_value = mock_agent_instance
             mock_runner_class.return_value = mock_runner_instance
@@ -151,9 +151,9 @@ class TestRecommendationAgent:
     def test_get_recommendations_success(self):
         """Test successful recommendation generation."""
         with patch("konnect.agents.recommendation.ADK_AVAILABLE", True), patch(
-            "google.adk.sessions.in_memory_session_service.InMemorySessionService"
-        ) as mock_session_service_class, patch("google.adk.Runner") as mock_runner_class, patch(
-            "google.adk.Agent"
+            "konnect.agents.recommendation.InMemorySessionService"
+        ) as mock_session_service_class, patch("konnect.agents.recommendation.Runner") as mock_runner_class, patch(
+            "konnect.agents.recommendation.Agent"
         ) as mock_agent_class, patch(
             "asyncio.run"
         ) as mock_asyncio_run:
@@ -167,7 +167,8 @@ class TestRecommendationAgent:
             mock_event = Mock()
             mock_event.response.text = "Here are some great recommendations!"
 
-            mock_asyncio_run.side_effect = [mock_session, [mock_event]]
+            mock_asyncio_run.return_value = mock_session
+            mock_runner_instance.run.return_value = [mock_event]
 
             mock_agent_class.return_value = mock_agent_instance
             mock_runner_class.return_value = mock_runner_instance
@@ -183,9 +184,9 @@ class TestRecommendationAgent:
     def test_get_recommendations_error(self):
         """Test error handling in recommendation generation."""
         with patch("konnect.agents.recommendation.ADK_AVAILABLE", True), patch(
-            "google.adk.sessions.in_memory_session_service.InMemorySessionService"
-        ) as mock_session_service_class, patch("google.adk.Runner") as mock_runner_class, patch(
-            "google.adk.Agent"
+            "konnect.agents.recommendation.InMemorySessionService"
+        ) as mock_session_service_class, patch("konnect.agents.recommendation.Runner") as mock_runner_class, patch(
+            "konnect.agents.recommendation.Agent"
         ) as mock_agent_class, patch(
             "asyncio.run"
         ) as mock_asyncio_run:
@@ -195,7 +196,8 @@ class TestRecommendationAgent:
             mock_session = Mock()
             mock_session.id = "test_session_id"
 
-            mock_asyncio_run.side_effect = [mock_session, Exception("API Error")]
+            mock_asyncio_run.return_value = mock_session
+            mock_runner_instance.run.side_effect = Exception("API Error")
 
             mock_agent_class.return_value = mock_agent_instance
             mock_runner_class.return_value = mock_runner_instance
@@ -211,9 +213,9 @@ class TestRecommendationAgent:
     def test_get_category_recommendations(self):
         """Test category-specific recommendations."""
         with patch("konnect.agents.recommendation.ADK_AVAILABLE", True), patch(
-            "google.adk.sessions.in_memory_session_service.InMemorySessionService"
-        ) as mock_session_service_class, patch("google.adk.Runner") as mock_runner_class, patch(
-            "google.adk.Agent"
+            "konnect.agents.recommendation.InMemorySessionService"
+        ) as mock_session_service_class, patch("konnect.agents.recommendation.Runner") as mock_runner_class, patch(
+            "konnect.agents.recommendation.Agent"
         ) as mock_agent_class, patch(
             "asyncio.run"
         ) as mock_asyncio_run:
@@ -227,7 +229,8 @@ class TestRecommendationAgent:
             mock_event = Mock()
             mock_event.response.text = "Electronics recommendations"
 
-            mock_asyncio_run.side_effect = [mock_session, [mock_event]]
+            mock_asyncio_run.return_value = mock_session
+            mock_runner_instance.run.return_value = [mock_event]
 
             mock_agent_class.return_value = mock_agent_instance
             mock_runner_class.return_value = mock_runner_instance
@@ -247,9 +250,9 @@ class TestRecommendationAgent:
     def test_get_budget_recommendations(self):
         """Test budget-based recommendations."""
         with patch("konnect.agents.recommendation.ADK_AVAILABLE", True), patch(
-            "google.adk.sessions.in_memory_session_service.InMemorySessionService"
-        ) as mock_session_service_class, patch("google.adk.Runner") as mock_runner_class, patch(
-            "google.adk.Agent"
+            "konnect.agents.recommendation.InMemorySessionService"
+        ) as mock_session_service_class, patch("konnect.agents.recommendation.Runner") as mock_runner_class, patch(
+            "konnect.agents.recommendation.Agent"
         ) as mock_agent_class, patch(
             "asyncio.run"
         ) as mock_asyncio_run:
@@ -263,7 +266,8 @@ class TestRecommendationAgent:
             mock_event = Mock()
             mock_event.response.text = "Budget recommendations"
 
-            mock_asyncio_run.side_effect = [mock_session, [mock_event]]
+            mock_asyncio_run.return_value = mock_session
+            mock_runner_instance.run.return_value = [mock_event]
 
             mock_agent_class.return_value = mock_agent_instance
             mock_runner_class.return_value = mock_runner_instance
@@ -282,15 +286,15 @@ class TestRecommendationAgent:
 
     def test_agent_constructor_call(self):
         with patch("konnect.agents.recommendation.ADK_AVAILABLE", True), patch(
-            "google.adk.sessions.in_memory_session_service.InMemorySessionService"
-        ) as mock_session_service_class, patch("google.adk.Runner") as mock_runner_class, patch(
-            "google.adk.Agent"
+            "konnect.agents.recommendation.InMemorySessionService"
+        ) as mock_session_service_class, patch("konnect.agents.recommendation.Runner") as mock_runner_class, patch(
+            "konnect.agents.recommendation.Agent"
         ) as mock_agent_class, patch(
             "asyncio.run"
         ) as mock_asyncio_run:
             mock_session = Mock()
             mock_session.id = "test_session_id"
-            mock_asyncio_run.side_effect = [mock_session, None]
+            mock_asyncio_run.return_value = mock_session
 
             mock_session_service_instance = Mock()
             mock_session_service_instance.create_session.return_value = mock_session
@@ -301,7 +305,7 @@ class TestRecommendationAgent:
 
             # Assert that google.adk.Agent was called
             mock_agent_class.assert_called_once()
-            call_args = mock_agent_class.call_.args
+            call_args = mock_agent_class.call_args
             print(f"Agent call_args: {call_args}")
 
             # Verify the arguments passed to google.adk.Agent
@@ -310,7 +314,7 @@ class TestRecommendationAgent:
             assert call_args.kwargs["name"] == "konnect_recommendation_agent"
             assert "instruction" in call_args.kwargs
             assert "tools" in call_args.kwargs
-            assert len(call_args.kwargs["tools"]) == 3
+            assert len(call_args.kwargs["tools"]) == 4
 
 
 class TestAgentFactory:
