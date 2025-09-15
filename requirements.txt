@@ -10,9 +10,12 @@ sqlalchemy==2.0.43
 psycopg2-binary==2.9.10
 python-dotenv==1.1.1
 solana==0.36.9
-opentelemetry-instrumentation-fastapi==0.49b2
-opentelemetry-exporter-prometheus==1.27.0
 prometheus-client==0.21.1
 python-json-logger==2.0.7
 redis==6.4.0
 celery==5.5.3
+opentelemetry-api==1.37.0
+opentelemetry-sdk==1.37.0
+opentelemetry-instrumentation-fastapi==0.58b0
+opentelemetry-exporter-prometheus==0.58b0
+opentelemetry-semantic-conventions==0.58b0

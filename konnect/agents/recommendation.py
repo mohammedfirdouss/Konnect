@@ -8,6 +8,7 @@ suggestions for students on the campus marketplace platform using Google ADK.
 from typing import Any, Dict, List, Optional
 import sys
 import os
+import asyncio
 
 # Add the project root to the Python path for database access
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
@@ -293,10 +294,11 @@ class RecommendationAgent:
             )
 
             # Create a session for interactions
-            self.session_id = self.session_service.create_session(
+            session = asyncio.run(self.session_service.create_session(
                 app_name="konnect_recommendations",
                 user_id="default_user",
-            ).id
+            ))
+            self.session_id = session.id
         else:
             self.session_service = None
             self.runner = None

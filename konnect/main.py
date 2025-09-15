@@ -10,7 +10,7 @@ from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.exporter.prometheus import PrometheusMetricReader
-from pythonjsonlogger import json
+from pythonjsonlogger import jsonlogger
 
 from .database import create_tables
 from .routers import auth, users, listings
@@ -34,7 +34,7 @@ def setup_logging():
     
     # Create JSON formatter
     json_handler = logging.StreamHandler()
-    formatter = json.JsonFormatter(
+    formatter = jsonlogger.JsonFormatter(
         fmt='%(asctime)s %(name)s %(levelname)s %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S'
     )

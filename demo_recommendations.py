@@ -16,7 +16,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from konnect.redis_client import redis_client
 from konnect.tasks import generate_recommendations_now, mock_recommendation_agent
 from konnect.schemas import RecommendationResponse
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 
 
 def demonstrate_recommendation_system():
@@ -43,7 +43,7 @@ def demonstrate_recommendation_system():
         
         if listing_ids:
             # Simulate the API response
-            cached_at = datetime.utcnow() - timedelta(minutes=30)
+            cached_at = datetime.now(UTC) - timedelta(minutes=30)
             expires_at = cached_at + timedelta(hours=1)
             
             response = RecommendationResponse(
