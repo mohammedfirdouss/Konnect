@@ -1,10 +1,9 @@
 """CRUD operations for database models"""
 
-from typing import Optional, List
 from collections import Counter
+from typing import List, Optional
 
 from sqlalchemy.orm import Session
-from sqlalchemy import func
 
 from . import models, schemas
 from .auth import get_password_hash, verify_password
@@ -218,14 +217,14 @@ def get_user_activity_summary(db: Session, user_id: int) -> dict:
     """Get comprehensive user activity summary for agent recommendations"""
     # Get user purchases
     purchases = get_user_purchases(db, user_id, limit=50)
-    
+
     # Get user activities
     activities = get_user_activities(db, user_id, limit=100)
-    
+
     # Calculate summary statistics
     total_purchases = len(purchases)
     total_spent = sum(p.amount for p in purchases if p.status == "completed")
-    
+
     # Get favorite categories from purchases
     if purchases:
         # Get listings for completed purchases
@@ -237,18 +236,18 @@ def get_user_activity_summary(db: Session, user_id: int) -> dict:
                 .filter(models.Listing.id.in_(listing_ids))
                 .all()
             )
-            categories = [l.category for l in listings if l.category]
+            categories = [listing.category for listing in listings if listing.category]
             category_counts = Counter(categories)
             favorite_categories = [cat for cat, count in category_counts.most_common(5)]
         else:
             favorite_categories = []
     else:
         favorite_categories = []
-    
+
     # Get recent activity summary
     recent_views = [a for a in activities if a.activity_type == "view"][:10]
     recent_searches = [a for a in activities if a.activity_type == "search"][:10]
-    
+
     return {
         "user_id": user_id,
         "total_purchases": total_purchases,

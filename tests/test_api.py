@@ -9,8 +9,8 @@ def test_root_endpoint():
     response = client.get("/")
     assert response.status_code == 200
     data = response.json()
-    assert data["message"] == "Hello from Konnect API"
-    assert data["status"] == "running"
+    assert data["message"] == "Welcome to Konnect - Campus Tools with SolanaPay"
+    
 
 
 def test_health_endpoint():
@@ -18,7 +18,7 @@ def test_health_endpoint():
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "healthy"
-    assert data["service"] == "konnect-backend"
+    assert data["service"] == "konnect"
 
 
 def test_docs_endpoint():

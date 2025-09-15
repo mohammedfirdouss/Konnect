@@ -2,13 +2,13 @@
 
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
+from .. import crud
 from ..database import get_db
 from ..dependencies import get_current_active_user
 from ..schemas import Listing, ListingCreate, ListingUpdate, User
-from .. import crud
 
 router = APIRouter(prefix="/listings", tags=["listings"])
 

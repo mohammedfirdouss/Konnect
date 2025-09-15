@@ -6,9 +6,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from konnect import models
 from konnect.database import Base, get_db
 from konnect.main import app
-from konnect import crud, models
 
 # Test database setup
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test_listings.db"

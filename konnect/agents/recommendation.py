@@ -5,41 +5,44 @@ This module implements a recommendation agent that provides personalized
 suggestions for students on the campus marketplace platform using Google ADK.
 """
 
-from typing import Any, Dict, List, Optional
-import sys
-import os
 import asyncio
+import os
+import sys
+from typing import Any, Dict, List, Optional
 
 # Add the project root to the Python path for database access
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
-from konnect.database import SessionLocal
 from konnect import crud
+from konnect.database import SessionLocal
 
 # Try to import Google ADK, but gracefully handle if not available
 try:
     from google.adk import Agent, Runner
     from google.adk.sessions.in_memory_session_service import InMemorySessionService
     from google.genai import types
+
     ADK_AVAILABLE = True
 except ImportError:
     ADK_AVAILABLE = False
+
     # Create mock classes for testing when ADK is not available
     class Agent:
         def __init__(self, *args, **kwargs):
             pass
-    
+
     class Runner:
         def __init__(self, *args, **kwargs):
             pass
-        
+
         def run(self, *args, **kwargs):
             return []
-    
+
     class InMemorySessionService:
         def create_session(self, *args, **kwargs):
             class MockSession:
                 id = "mock_session"
+
             return MockSession()
 
 
@@ -72,11 +75,11 @@ def get_user_activity(user_id: int) -> Dict[str, Any]:
 
 def get_user_activity_with_db(db, user_id: int) -> Dict[str, Any]:
     """Get user activity with a provided database session.
-    
+
     This version is more testable as it accepts a database session.
     """
     activity_data = crud.get_user_activity_summary(db, user_id)
-    
+
     # Convert database objects to simple dictionaries for the agent
     result = {
         "user_id": activity_data["user_id"],
@@ -118,7 +121,7 @@ def get_user_activity_with_db(db, user_id: int) -> Dict[str, Any]:
             for a in activity_data["recent_searches"]
         ],
     }
-    
+
     return result
 
 
@@ -136,7 +139,7 @@ def get_popular_items() -> List[Dict[str, Any]]:
             "price": 800.0,
             "category": "Electronics",
             "description": "Excellent condition, perfect for students",
-            "popularity_score": 95
+            "popularity_score": 95,
         },
         {
             "id": 2,
@@ -144,7 +147,7 @@ def get_popular_items() -> List[Dict[str, Any]]:
             "price": 45.0,
             "category": "Books",
             "description": "Latest edition, minimal highlighting",
-            "popularity_score": 87
+            "popularity_score": 87,
         },
         {
             "id": 3,
@@ -152,8 +155,8 @@ def get_popular_items() -> List[Dict[str, Any]]:
             "price": 15.0,
             "category": "Furniture",
             "description": "Perfect for dorm room study setup",
-            "popularity_score": 78
-        }
+            "popularity_score": 78,
+        },
     ]
 
 
@@ -167,7 +170,12 @@ def search_items_by_category(category: str) -> List[Dict[str, Any]]:
         A list of items in the specified category.
     """
     all_items = [
-        {"id": 1, "title": "MacBook Pro 13-inch", "price": 800.0, "category": "Electronics"},
+        {
+            "id": 1,
+            "title": "MacBook Pro 13-inch",
+            "price": 800.0,
+            "category": "Electronics",
+        },
         {"id": 2, "title": "iPhone 12", "price": 400.0, "category": "Electronics"},
         {"id": 3, "title": "Calculus Textbook", "price": 45.0, "category": "Books"},
         {"id": 4, "title": "Chemistry Lab Manual", "price": 25.0, "category": "Books"},
@@ -178,8 +186,7 @@ def search_items_by_category(category: str) -> List[Dict[str, Any]]:
     # Filter items by category (case insensitive)
     category_lower = category.lower()
     filtered_items = [
-        item for item in all_items
-        if item["category"].lower() == category_lower
+        item for item in all_items if item["category"].lower() == category_lower
     ]
 
     return filtered_items
@@ -198,13 +205,17 @@ def get_price_range_items(min_price: float, max_price: float) -> List[Dict[str, 
     all_items = get_popular_items() + [
         {"id": 4, "title": "Chemistry Lab Manual", "price": 25.0, "category": "Books"},
         {"id": 5, "title": "Study Chair", "price": 80.0, "category": "Furniture"},
-        {"id": 6, "title": "Scientific Calculator", "price": 35.0, "category": "Electronics"},
+        {
+            "id": 6,
+            "title": "Scientific Calculator",
+            "price": 35.0,
+            "category": "Electronics",
+        },
     ]
 
     # Filter items by price range
     filtered_items = [
-        item for item in all_items
-        if min_price <= item["price"] <= max_price
+        item for item in all_items if min_price <= item["price"] <= max_price
     ]
 
     return filtered_items
@@ -225,11 +236,12 @@ class RecommendationAgent:
         """
         if not ADK_AVAILABLE:
             print("Warning: Google ADK not available. Agent will run in mock mode.")
-        
-        self.agent = Agent(
-            model=model,
-            name="konnect_recommendation_agent",
-            instruction="""
+
+        self.agent = (
+            Agent(
+                model=model,
+                name="konnect_recommendation_agent",
+                instruction="""
             You are a helpful recommendation agent for Konnect, a campus marketplace platform
             where students can buy and sell items to each other. Your role is to provide
             personalized recommendations based on user queries and their activity history.
@@ -261,28 +273,31 @@ class RecommendationAgent:
             6. Include prices and brief descriptions
             7. Reference their past purchases or interests when relevant
             """,
-            tools=[
-                get_popular_items,
-                search_items_by_category,
-                get_price_range_items,
-                get_user_activity,
-            ],
-            generate_content_config=types.GenerateContentConfig(
-                safety_settings=[
-                    types.SafetySetting(
-                        category=types.HarmCategory.HARM_CATEGORY_HARASSMENT,
-                        threshold=types.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-                    ),
-                    types.SafetySetting(
-                        category=types.HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-                        threshold=types.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-                    ),
+                tools=[
+                    get_popular_items,
+                    search_items_by_category,
+                    get_price_range_items,
+                    get_user_activity,
                 ],
-                temperature=0.7,  # Balanced creativity for recommendations
-                top_p=0.9,
-                max_output_tokens=1000,
-            ),
-        ) if ADK_AVAILABLE else None
+                generate_content_config=types.GenerateContentConfig(
+                    safety_settings=[
+                        types.SafetySetting(
+                            category=types.HarmCategory.HARM_CATEGORY_HARASSMENT,
+                            threshold=types.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+                        ),
+                        types.SafetySetting(
+                            category=types.HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+                            threshold=types.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+                        ),
+                    ],
+                    temperature=0.7,  # Balanced creativity for recommendations
+                    top_p=0.9,
+                    max_output_tokens=1000,
+                ),
+            )
+            if ADK_AVAILABLE
+            else None
+        )
 
         if ADK_AVAILABLE:
             # Create a runner to execute the agent
@@ -294,10 +309,12 @@ class RecommendationAgent:
             )
 
             # Create a session for interactions
-            session = asyncio.run(self.session_service.create_session(
-                app_name="konnect_recommendations",
-                user_id="default_user",
-            ))
+            session = asyncio.run(
+                self.session_service.create_session(
+                    app_name="konnect_recommendations",
+                    user_id="default_user",
+                )
+            )
             self.session_id = session.id
         else:
             self.session_service = None
@@ -315,7 +332,7 @@ class RecommendationAgent:
         """
         if not ADK_AVAILABLE:
             return "Mock recommendation: Google ADK not available. In a real environment, this would provide personalized recommendations based on the query."
-        
+
         try:
             # Create a user message content
             user_message = types.Content(
@@ -324,17 +341,19 @@ class RecommendationAgent:
             )
 
             # Run the agent with the query
-            events = list(self.runner.run(
-                user_id="default_user",
-                session_id=self.session_id,
-                new_message=user_message,
-            ))
+            events = list(
+                self.runner.run(
+                    user_id="default_user",
+                    session_id=self.session_id,
+                    new_message=user_message,
+                )
+            )
 
             # Extract the text response from the events
             for event in events:
-                if hasattr(event, 'response') and hasattr(event.response, 'text'):
+                if hasattr(event, "response") and hasattr(event.response, "text"):
                     return event.response.text
-                elif hasattr(event, 'content') and isinstance(event.content, str):
+                elif hasattr(event, "content") and isinstance(event.content, str):
                     return event.content
 
             return "I apologize, but I couldn't generate recommendations at this time."
@@ -342,7 +361,9 @@ class RecommendationAgent:
         except Exception as e:
             return f"Sorry, I encountered an error while generating recommendations: {str(e)}"
 
-    def get_category_recommendations(self, category: str, budget: Optional[float] = None) -> str:
+    def get_category_recommendations(
+        self, category: str, budget: Optional[float] = None
+    ) -> str:
         """Get recommendations for a specific category and optional budget.
 
         Args:
@@ -385,12 +406,14 @@ class RecommendationAgent:
             full_query = f"User ID {user_id}: {query}. Please provide personalized recommendations."
         else:
             full_query = f"User ID {user_id}: Please provide personalized recommendations based on my activity history."
-        
+
         return self.get_recommendations(full_query)
 
 
 # Factory function for easy agent creation
-def create_recommendation_agent(model: str = "gemini-2.0-flash-exp") -> RecommendationAgent:
+def create_recommendation_agent(
+    model: str = "gemini-2.0-flash-exp",
+) -> RecommendationAgent:
     """Create a new recommendation agent instance.
 
     Args:
