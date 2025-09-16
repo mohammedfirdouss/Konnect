@@ -79,15 +79,15 @@ class TestRecommendationAgent:
 
     def test_agent_initialization(self):
         """Test that the agent initializes correctly."""
-        with patch("konnect.agents.recommendation.ADK_AVAILABLE", True), patch(
-            "konnect.agents.recommendation.InMemorySessionService"
-        ) as mock_session_service_class, patch(
-            "konnect.agents.recommendation.Runner"
-        ) as mock_runner_class, patch(
-            "konnect.agents.recommendation.Agent"
-        ) as mock_agent_class, patch(
-            "asyncio.run"
-        ) as mock_asyncio_run:
+        with (
+            patch("konnect.agents.recommendation.ADK_AVAILABLE", True),
+            patch(
+                "konnect.agents.recommendation.InMemorySessionService"
+            ) as mock_session_service_class,
+            patch("konnect.agents.recommendation.Runner") as mock_runner_class,
+            patch("konnect.agents.recommendation.Agent") as mock_agent_class,
+            patch("asyncio.run") as mock_asyncio_run,
+        ):
             mock_agent_instance = Mock()
             mock_runner_instance = Mock()
             mock_session_service_instance = Mock()
@@ -122,15 +122,15 @@ class TestRecommendationAgent:
 
     def test_custom_model_initialization(self):
         """Test agent initialization with custom model."""
-        with patch("konnect.agents.recommendation.ADK_AVAILABLE", True), patch(
-            "konnect.agents.recommendation.InMemorySessionService"
-        ) as mock_session_service_class, patch(
-            "konnect.agents.recommendation.Runner"
-        ) as mock_runner_class, patch(
-            "konnect.agents.recommendation.Agent"
-        ) as mock_agent_class, patch(
-            "asyncio.run"
-        ) as mock_asyncio_run:
+        with (
+            patch("konnect.agents.recommendation.ADK_AVAILABLE", True),
+            patch(
+                "konnect.agents.recommendation.InMemorySessionService"
+            ) as mock_session_service_class,
+            patch("konnect.agents.recommendation.Runner") as mock_runner_class,
+            patch("konnect.agents.recommendation.Agent") as mock_agent_class,
+            patch("asyncio.run") as mock_asyncio_run,
+        ):
             mock_agent_instance = Mock()
             mock_runner_instance = Mock()
             mock_session_service_instance = Mock()
@@ -152,15 +152,15 @@ class TestRecommendationAgent:
 
     def test_get_recommendations_success(self):
         """Test successful recommendation generation."""
-        with patch("konnect.agents.recommendation.ADK_AVAILABLE", True), patch(
-            "konnect.agents.recommendation.InMemorySessionService"
-        ) as mock_session_service_class, patch(
-            "konnect.agents.recommendation.Runner"
-        ) as mock_runner_class, patch(
-            "konnect.agents.recommendation.Agent"
-        ) as mock_agent_class, patch(
-            "asyncio.run"
-        ) as mock_asyncio_run:
+        with (
+            patch("konnect.agents.recommendation.ADK_AVAILABLE", True),
+            patch(
+                "konnect.agents.recommendation.InMemorySessionService"
+            ) as mock_session_service_class,
+            patch("konnect.agents.recommendation.Runner") as mock_runner_class,
+            patch("konnect.agents.recommendation.Agent") as mock_agent_class,
+            patch("asyncio.run") as mock_asyncio_run,
+        ):
             mock_agent_instance = Mock()
             mock_runner_instance = Mock()
             mock_session_service_instance = Mock()
@@ -187,15 +187,15 @@ class TestRecommendationAgent:
 
     def test_get_recommendations_error(self):
         """Test error handling in recommendation generation."""
-        with patch("konnect.agents.recommendation.ADK_AVAILABLE", True), patch(
-            "konnect.agents.recommendation.InMemorySessionService"
-        ) as mock_session_service_class, patch(
-            "konnect.agents.recommendation.Runner"
-        ) as mock_runner_class, patch(
-            "konnect.agents.recommendation.Agent"
-        ) as mock_agent_class, patch(
-            "asyncio.run"
-        ) as mock_asyncio_run:
+        with (
+            patch("konnect.agents.recommendation.ADK_AVAILABLE", True),
+            patch(
+                "konnect.agents.recommendation.InMemorySessionService"
+            ) as mock_session_service_class,
+            patch("konnect.agents.recommendation.Runner") as mock_runner_class,
+            patch("konnect.agents.recommendation.Agent") as mock_agent_class,
+            patch("asyncio.run") as mock_asyncio_run,
+        ):
             mock_agent_instance = Mock()
             mock_runner_instance = Mock()
             mock_session_service_instance = Mock()
@@ -218,15 +218,15 @@ class TestRecommendationAgent:
 
     def test_get_category_recommendations(self):
         """Test category-specific recommendations."""
-        with patch("konnect.agents.recommendation.ADK_AVAILABLE", True), patch(
-            "konnect.agents.recommendation.InMemorySessionService"
-        ) as mock_session_service_class, patch(
-            "konnect.agents.recommendation.Runner"
-        ) as mock_runner_class, patch(
-            "konnect.agents.recommendation.Agent"
-        ) as mock_agent_class, patch(
-            "asyncio.run"
-        ) as mock_asyncio_run:
+        with (
+            patch("konnect.agents.recommendation.ADK_AVAILABLE", True),
+            patch(
+                "konnect.agents.recommendation.InMemorySessionService"
+            ) as mock_session_service_class,
+            patch("konnect.agents.recommendation.Runner") as mock_runner_class,
+            patch("konnect.agents.recommendation.Agent") as mock_agent_class,
+            patch("asyncio.run") as mock_asyncio_run,
+        ):
             mock_agent_instance = Mock()
             mock_runner_instance = Mock()
             mock_session_service_instance = Mock()
@@ -257,15 +257,15 @@ class TestRecommendationAgent:
 
     def test_get_budget_recommendations(self):
         """Test budget-based recommendations."""
-        with patch("konnect.agents.recommendation.ADK_AVAILABLE", True), patch(
-            "konnect.agents.recommendation.InMemorySessionService"
-        ) as mock_session_service_class, patch(
-            "konnect.agents.recommendation.Runner"
-        ) as mock_runner_class, patch(
-            "konnect.agents.recommendation.Agent"
-        ) as mock_agent_class, patch(
-            "asyncio.run"
-        ) as mock_asyncio_run:
+        with (
+            patch("konnect.agents.recommendation.ADK_AVAILABLE", True),
+            patch(
+                "konnect.agents.recommendation.InMemorySessionService"
+            ) as mock_session_service_class,
+            patch("konnect.agents.recommendation.Runner") as mock_runner_class,
+            patch("konnect.agents.recommendation.Agent") as mock_agent_class,
+            patch("asyncio.run") as mock_asyncio_run,
+        ):
             mock_agent_instance = Mock()
             mock_runner_instance = Mock()
             mock_session_service_instance = Mock()
@@ -295,15 +295,15 @@ class TestRecommendationAgent:
             assert result == "Budget recommendations"
 
     def test_agent_constructor_call(self):
-        with patch("konnect.agents.recommendation.ADK_AVAILABLE", True), patch(
-            "konnect.agents.recommendation.InMemorySessionService"
-        ) as mock_session_service_class, patch(
-            "konnect.agents.recommendation.Runner"
-        ), patch(
-            "konnect.agents.recommendation.Agent"
-        ) as mock_agent_class, patch(
-            "asyncio.run"
-        ) as mock_asyncio_run:
+        with (
+            patch("konnect.agents.recommendation.ADK_AVAILABLE", True),
+            patch(
+                "konnect.agents.recommendation.InMemorySessionService"
+            ) as mock_session_service_class,
+            patch("konnect.agents.recommendation.Runner"),
+            patch("konnect.agents.recommendation.Agent") as mock_agent_class,
+            patch("asyncio.run") as mock_asyncio_run,
+        ):
             mock_session = Mock()
             mock_session.id = "test_session_id"
             mock_asyncio_run.return_value = mock_session

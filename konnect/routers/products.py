@@ -1,6 +1,5 @@
 """Products router for advanced product search and filtering"""
 
-
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 

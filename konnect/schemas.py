@@ -355,9 +355,9 @@ class ProductSearchFilters(BaseModel):
     max_price: Optional[float] = None
     marketplace_id: Optional[int] = None
     verified_sellers_only: bool = False
-    sort_by: Optional[
-        str
-    ] = "relevance"  # relevance, price_asc, price_desc, newest, oldest
+    sort_by: Optional[str] = (
+        "relevance"  # relevance, price_asc, price_desc, newest, oldest
+    )
 
 
 class ProductSearchResult(BaseModel):

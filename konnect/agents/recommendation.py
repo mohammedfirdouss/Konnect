@@ -349,8 +349,6 @@ class RecommendationAgent:
             self.runner = None
             self._initialized = False
 
-    
-
     def get_recommendations(self, query: str) -> str:
         """Get recommendations based on user query.
 
@@ -366,8 +364,6 @@ class RecommendationAgent:
                 "In a real environment, this would provide personalized "
                 "recommendations based on the query."
             )
-
-        
 
         if not self.runner:
             return "Sorry, I couldn't initialize the recommendation system."
