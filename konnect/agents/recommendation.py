@@ -263,20 +263,14 @@ class RecommendationAgent:
         """
         if not ADK_AVAILABLE:
             print("Warning: Google ADK not available. Agent will run in mock mode.")
-
-        self.model = model
-        self.agent = None
-        self.session_service = None
-        self.runner = None
-        self.session_id = None
-        self._initialized = False
-
-    def _ensure_initialized(self):
-        """Lazy initialization of ADK components to avoid asyncio issues during
-        import."""
-        if self._initialized or not ADK_AVAILABLE:
+            self.agent = None
+            self.session_service = None
+            self.runner = None
+            self.session_id = None
+            self._initialized = False
             return
 
+        self.model = model
         try:
             # Create the agent
             self.agent = Agent(
@@ -345,7 +339,7 @@ class RecommendationAgent:
                 agent=self.agent,
                 session_service=self.session_service,
             )
-
+            self.session_id = None
             self._initialized = True
 
         except Exception as e:
@@ -353,6 +347,9 @@ class RecommendationAgent:
             self.agent = None
             self.session_service = None
             self.runner = None
+            self._initialized = False
+
+    
 
     def get_recommendations(self, query: str) -> str:
         """Get recommendations based on user query.
@@ -370,7 +367,7 @@ class RecommendationAgent:
                 "recommendations based on the query."
             )
 
-        self._ensure_initialized()
+        
 
         if not self.runner:
             return "Sorry, I couldn't initialize the recommendation system."
