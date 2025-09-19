@@ -14,7 +14,9 @@ from ..schemas import (
     SellerVerificationRequest,
     SellerVerificationResponse,
     User,
+    FraudDetectionResponse,
 )
+from ..agents.fraud_detection import create_fraud_detection_agent
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -180,3 +182,61 @@ async def reject_marketplace_request(
     updated_request = crud.reject_marketplace_request(db, request_id)
 
     return {"message": "Marketplace request rejected", "request": updated_request}
+
+
+# AI Fraud Detection Reports
+@router.get("/ai/fraud-reports", response_model=FraudDetectionResponse)
+async def get_fraud_reports(
+    page: int = 1,
+    page_size: int = 50,
+    current_user: User = Depends(require_admin_role),
+):
+    """Get AI-powered fraud detection reports for admin review"""
+    try:
+        # Create fraud detection agent
+        agent = create_fraud_detection_agent()
+
+        # Get fraud reports
+        reports = agent.get_fraud_reports(limit=page_size)
+
+        # Calculate summary statistics
+        total_reports = len(reports)
+        high_risk_reports = len([r for r in reports if r.get("risk_level") == "high"])
+        medium_risk_reports = len(
+            [r for r in reports if r.get("risk_level") == "medium"]
+        )
+        pending_investigation = len(
+            [r for r in reports if r.get("status") == "pending"]
+        )
+
+        # Create summary
+        summary = {
+            "total_reports": total_reports,
+            "high_risk_reports": high_risk_reports,
+            "medium_risk_reports": medium_risk_reports,
+            "pending_investigation": pending_investigation,
+            "recent_activity": reports[:5],  # Top 5 recent reports
+            "risk_trends": {
+                "user_fraud": len(
+                    [r for r in reports if r.get("entity_type") == "user"]
+                ),
+                "listing_fraud": len(
+                    [r for r in reports if r.get("entity_type") == "listing"]
+                ),
+                "payment_fraud": 0,  # Would be calculated from payment-related reports
+            },
+        }
+
+        return FraudDetectionResponse(
+            reports=reports,
+            summary=summary,
+            total_count=total_reports,
+            page=page,
+            page_size=page_size,
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=503,
+            detail=f"AI fraud detection service temporarily unavailable: {str(e)}",
+        )

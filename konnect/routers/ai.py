@@ -1,4 +1,4 @@
-"""AI router for recommendations and seller insights"""
+"""AI router for recommendations, seller insights, and advanced AI features"""
 
 from datetime import datetime
 
@@ -7,9 +7,22 @@ from sqlalchemy.orm import Session
 
 from .. import crud
 from ..agents.recommendation import create_recommendation_agent
+from ..agents.semantic_search import create_semantic_search_agent
+from ..agents.price_suggestion import create_price_suggestion_agent
+from ..agents.description_generation import create_description_generation_agent
 from ..database import get_db
 from ..dependencies import get_current_active_user
-from ..schemas import AIRecommendationsResponse, SellerInsights, User
+from ..schemas import (
+    AIRecommendationsResponse,
+    SellerInsights,
+    User,
+    AISearchRequest,
+    AISearchResponse,
+    PriceSuggestionRequest,
+    PriceSuggestionResponse,
+    DescriptionGenerationRequest,
+    DescriptionGenerationResponse,
+)
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 
@@ -104,3 +117,113 @@ async def get_market_analysis(
             "Seasonal trends",
         ],
     }
+
+
+# AI-Powered Semantic Search
+@router.post("/search", response_model=AISearchResponse)
+async def ai_semantic_search(
+    search_request: AISearchRequest,
+    current_user: User = Depends(get_current_active_user),
+):
+    """AI-powered semantic search with natural language queries"""
+    try:
+        # Create semantic search agent
+        agent = create_semantic_search_agent()
+
+        # Perform semantic search
+        search_result = agent.search(search_request.query, search_request.max_results)
+
+        return AISearchResponse(
+            query=search_request.query,
+            results=[],  # Would be populated with parsed results
+            total_found=search_result.get("total_found", 0),
+            search_time_ms=search_result.get("search_time_ms", 0),
+            explanation=search_result.get("explanation", "Search completed"),
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=503,
+            detail=f"AI search service temporarily unavailable: {str(e)}",
+        )
+
+
+# AI Price Suggestion
+@router.post("/suggest-price", response_model=PriceSuggestionResponse)
+async def ai_price_suggestion(
+    price_request: PriceSuggestionRequest,
+    current_user: User = Depends(get_current_active_user),
+):
+    """AI-powered price suggestion for sellers"""
+    try:
+        # Create price suggestion agent
+        agent = create_price_suggestion_agent()
+
+        # Get price suggestion
+        suggestion = agent.suggest_price(
+            title=price_request.title,
+            category=price_request.category,
+            condition=price_request.condition,
+            brand=price_request.brand,
+            additional_details=price_request.additional_details,
+        )
+
+        return PriceSuggestionResponse(
+            suggested_price_range=suggestion.get(
+                "suggested_price_range", {"min": 0.0, "max": 0.0, "recommended": 0.0}
+            ),
+            market_analysis=suggestion.get(
+                "market_analysis",
+                {
+                    "average_price": 0.0,
+                    "price_trend": "unknown",
+                    "competition_level": "unknown",
+                },
+            ),
+            reasoning=suggestion.get("reasoning", "Price analysis completed"),
+            similar_listings=suggestion.get("similar_listings", []),
+            confidence_score=suggestion.get("confidence_score", 0.0),
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=503,
+            detail=f"AI price suggestion service temporarily unavailable: {str(e)}",
+        )
+
+
+# AI Description Generation
+@router.post("/generate-description", response_model=DescriptionGenerationResponse)
+async def ai_generate_description(
+    description_request: DescriptionGenerationRequest,
+    current_user: User = Depends(get_current_active_user),
+):
+    """AI-powered description generation for sellers"""
+    try:
+        # Create description generation agent
+        agent = create_description_generation_agent()
+
+        # Generate description
+        generated = agent.generate_description(
+            title=description_request.title,
+            category=description_request.category,
+            condition=description_request.condition,
+            brand=description_request.brand,
+            key_features=description_request.key_features,
+            target_audience=description_request.target_audience,
+            tone=description_request.tone,
+        )
+
+        return DescriptionGenerationResponse(
+            generated_description=generated.get("generated_description", ""),
+            alternative_descriptions=generated.get("alternative_descriptions", []),
+            suggested_keywords=generated.get("suggested_keywords", []),
+            seo_score=generated.get("seo_score", 0.0),
+            readability_score=generated.get("readability_score", 0.0),
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=503,
+            detail=f"AI description generation service temporarily unavailable: {str(e)}",
+        )

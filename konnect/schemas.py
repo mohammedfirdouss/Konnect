@@ -605,3 +605,122 @@ class MessageHistoryResponse(BaseModel):
     other_user_username: str
     other_user_full_name: Optional[str] = None
     total_count: int
+
+
+# AI-Powered Features schemas
+class AISearchRequest(BaseModel):
+    """Request schema for AI semantic search"""
+
+    query: str
+    max_results: int = 20
+    include_explanation: bool = True
+
+
+class AISearchResult(BaseModel):
+    """AI search result with relevance score and explanation"""
+
+    listing_id: int
+    title: str
+    description: Optional[str] = None
+    price: float
+    category: Optional[str] = None
+    seller_username: str
+    marketplace_name: str
+    relevance_score: float
+    explanation: Optional[str] = None
+    matched_keywords: List[str] = []
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class AISearchResponse(BaseModel):
+    """Response schema for AI semantic search"""
+
+    query: str
+    results: List[AISearchResult] = []
+    total_found: int
+    search_time_ms: int
+    explanation: Optional[str] = None
+
+
+class PriceSuggestionRequest(BaseModel):
+    """Request schema for AI price suggestion"""
+
+    title: str
+    category: Optional[str] = None
+    condition: Optional[str] = None  # new, good, fair, poor
+    brand: Optional[str] = None
+    additional_details: Optional[str] = None
+
+
+class PriceSuggestionResponse(BaseModel):
+    """Response schema for AI price suggestion"""
+
+    suggested_price_range: dict  # {"min": float, "max": float, "recommended": float}
+    market_analysis: (
+        dict  # {"average_price": float, "price_trend": str, "competition_level": str}
+    )
+    reasoning: str
+    similar_listings: List[dict] = []  # List of similar listings with prices
+    confidence_score: float  # 0.0 to 1.0
+
+
+class DescriptionGenerationRequest(BaseModel):
+    """Request schema for AI description generation"""
+
+    title: str
+    category: Optional[str] = None
+    condition: Optional[str] = None
+    brand: Optional[str] = None
+    key_features: List[str] = []
+    target_audience: Optional[str] = None  # students, general, etc.
+    tone: str = "professional"  # professional, casual, friendly
+
+
+class DescriptionGenerationResponse(BaseModel):
+    """Response schema for AI description generation"""
+
+    generated_description: str
+    alternative_descriptions: List[str] = []
+    suggested_keywords: List[str] = []
+    seo_score: float  # 0.0 to 1.0
+    readability_score: float  # 0.0 to 1.0
+
+
+class FraudDetectionReport(BaseModel):
+    """Fraud detection report schema"""
+
+    id: int
+    entity_type: str  # "user" or "listing"
+    entity_id: int
+    risk_score: float  # 0.0 to 1.0
+    risk_level: str  # "low", "medium", "high", "critical"
+    flagged_reasons: List[str] = []
+    detection_method: str
+    confidence: float  # 0.0 to 1.0
+    created_at: datetime
+    status: str  # "pending", "investigated", "resolved", "false_positive"
+    admin_notes: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class FraudDetectionSummary(BaseModel):
+    """Summary of fraud detection reports"""
+
+    total_reports: int
+    high_risk_reports: int
+    medium_risk_reports: int
+    pending_investigation: int
+    recent_activity: List[FraudDetectionReport] = []
+    risk_trends: dict = {}  # {"user_fraud": int, "listing_fraud": int, "payment_fraud": int}
+
+
+class FraudDetectionResponse(BaseModel):
+    """Response schema for fraud detection reports"""
+
+    reports: List[FraudDetectionReport] = []
+    summary: FraudDetectionSummary
+    total_count: int
+    page: int
+    page_size: int
