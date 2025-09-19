@@ -663,3 +663,240 @@ def get_seller_stats(db: Session, seller_id: int) -> dict:
         "avg_order_value": avg_order_value,
         "top_products": top_products,
     }
+
+
+# User Review CRUD functions
+def create_user_review(
+    db: Session, review: schemas.ReviewCreate, reviewer_id: int
+) -> models.UserReview:
+    """Create a new user review"""
+    # Check if reviewer has already reviewed this user
+    existing_review = (
+        db.query(models.UserReview)
+        .filter(
+            models.UserReview.reviewer_id == reviewer_id,
+            models.UserReview.reviewed_user_id == review.reviewed_user_id,
+        )
+        .first()
+    )
+    
+    if existing_review:
+        raise ValueError("You have already reviewed this user")
+    
+    # Validate rating
+    if not (1 <= review.rating <= 5):
+        raise ValueError("Rating must be between 1 and 5")
+    
+    db_review = models.UserReview(
+        reviewer_id=reviewer_id,
+        reviewed_user_id=review.reviewed_user_id,
+        rating=review.rating,
+        comment=review.comment,
+        order_id=review.order_id,
+    )
+    db.add(db_review)
+    db.commit()
+    db.refresh(db_review)
+    return db_review
+
+
+def get_user_reviews(
+    db: Session, user_id: int, skip: int = 0, limit: int = 100
+) -> List[models.UserReview]:
+    """Get all reviews for a specific user"""
+    return (
+        db.query(models.UserReview)
+        .filter(models.UserReview.reviewed_user_id == user_id)
+        .order_by(models.UserReview.created_at.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+
+
+def get_user_review_summary(db: Session, user_id: int) -> dict:
+    """Get review summary for a user"""
+    reviews = db.query(models.UserReview).filter(
+        models.UserReview.reviewed_user_id == user_id
+    ).all()
+    
+    if not reviews:
+        return {
+            "user_id": user_id,
+            "total_reviews": 0,
+            "average_rating": 0.0,
+            "rating_distribution": {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
+        }
+    
+    total_reviews = len(reviews)
+    average_rating = sum(r.rating for r in reviews) / total_reviews
+    
+    # Count rating distribution
+    rating_counts = Counter(r.rating for r in reviews)
+    rating_distribution = {i: rating_counts.get(i, 0) for i in range(1, 6)}
+    
+    return {
+        "user_id": user_id,
+        "total_reviews": total_reviews,
+        "average_rating": round(average_rating, 2),
+        "rating_distribution": rating_distribution
+    }
+
+
+def update_user_review(
+    db: Session, review_id: int, review_update: schemas.ReviewUpdate, reviewer_id: int
+) -> Optional[models.UserReview]:
+    """Update a user review (only by the reviewer)"""
+    db_review = (
+        db.query(models.UserReview)
+        .filter(
+            models.UserReview.id == review_id,
+            models.UserReview.reviewer_id == reviewer_id
+        )
+        .first()
+    )
+    
+    if not db_review:
+        return None
+    
+    # Update only provided fields
+    update_data = review_update.model_dump(exclude_unset=True)
+    
+    for field, value in update_data.items():
+        if field == "rating" and not (1 <= value <= 5):
+            raise ValueError("Rating must be between 1 and 5")
+        setattr(db_review, field, value)
+    
+    db.commit()
+    db.refresh(db_review)
+    return db_review
+
+
+def delete_user_review(db: Session, review_id: int, reviewer_id: int) -> bool:
+    """Delete a user review (only by the reviewer)"""
+    db_review = (
+        db.query(models.UserReview)
+        .filter(
+            models.UserReview.id == review_id,
+            models.UserReview.reviewer_id == reviewer_id
+        )
+        .first()
+    )
+    
+    if not db_review:
+        return False
+    
+    db.delete(db_review)
+    db.commit()
+    return True
+
+
+# User Wishlist CRUD functions
+def add_to_wishlist(db: Session, user_id: int, listing_id: int) -> models.UserWishlist:
+    """Add a listing to user's wishlist"""
+    # Check if already in wishlist
+    existing_item = (
+        db.query(models.UserWishlist)
+        .filter(
+            models.UserWishlist.user_id == user_id,
+            models.UserWishlist.listing_id == listing_id
+        )
+        .first()
+    )
+    
+    if existing_item:
+        raise ValueError("Listing is already in your wishlist")
+    
+    # Verify listing exists and is active
+    listing = get_listing(db, listing_id)
+    if not listing or not listing.is_active:
+        raise ValueError("Listing not found or inactive")
+    
+    db_wishlist_item = models.UserWishlist(
+        user_id=user_id,
+        listing_id=listing_id
+    )
+    db.add(db_wishlist_item)
+    db.commit()
+    db.refresh(db_wishlist_item)
+    return db_wishlist_item
+
+
+def remove_from_wishlist(db: Session, user_id: int, listing_id: int) -> bool:
+    """Remove a listing from user's wishlist"""
+    db_wishlist_item = (
+        db.query(models.UserWishlist)
+        .filter(
+            models.UserWishlist.user_id == user_id,
+            models.UserWishlist.listing_id == listing_id
+        )
+        .first()
+    )
+    
+    if not db_wishlist_item:
+        return False
+    
+    db.delete(db_wishlist_item)
+    db.commit()
+    return True
+
+
+def get_user_wishlist(
+    db: Session, user_id: int, skip: int = 0, limit: int = 100
+) -> List[models.UserWishlist]:
+    """Get user's wishlist"""
+    return (
+        db.query(models.UserWishlist)
+        .filter(models.UserWishlist.user_id == user_id)
+        .order_by(models.UserWishlist.created_at.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+
+
+def get_wishlist_with_details(
+    db: Session, user_id: int, skip: int = 0, limit: int = 100
+) -> List[dict]:
+    """Get user's wishlist with listing details"""
+    wishlist_items = (
+        db.query(models.UserWishlist, models.Listing, models.User, models.Marketplace)
+        .join(models.Listing, models.UserWishlist.listing_id == models.Listing.id)
+        .join(models.User, models.Listing.user_id == models.User.id)
+        .join(models.Marketplace, models.Listing.marketplace_id == models.Marketplace.id)
+        .filter(models.UserWishlist.user_id == user_id)
+        .filter(models.Listing.is_active)
+        .order_by(models.UserWishlist.created_at.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+    
+    result = []
+    for wishlist_item, listing, seller, marketplace in wishlist_items:
+        result.append({
+            "id": wishlist_item.id,
+            "listing_id": listing.id,
+            "created_at": wishlist_item.created_at,
+            "listing_title": listing.title,
+            "listing_price": listing.price,
+            "listing_category": listing.category,
+            "listing_description": listing.description,
+            "seller_username": seller.username,
+            "marketplace_name": marketplace.name
+        })
+    
+    return result
+
+
+def is_in_wishlist(db: Session, user_id: int, listing_id: int) -> bool:
+    """Check if a listing is in user's wishlist"""
+    return (
+        db.query(models.UserWishlist)
+        .filter(
+            models.UserWishlist.user_id == user_id,
+            models.UserWishlist.listing_id == listing_id
+        )
+        .first()
+        is not None
+    )

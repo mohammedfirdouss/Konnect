@@ -51,6 +51,9 @@ class User(Base):
     orders_as_seller = relationship(
         "Order", foreign_keys="Order.seller_id", back_populates="seller"
     )
+    reviews_given = relationship("UserReview", foreign_keys="UserReview.reviewer_id", back_populates="reviewer")
+    reviews_received = relationship("UserReview", foreign_keys="UserReview.reviewed_user_id", back_populates="reviewed_user")
+    wishlist = relationship("UserWishlist", back_populates="user")
 
 
 class Marketplace(Base):
@@ -99,6 +102,7 @@ class Listing(Base):
     marketplace = relationship("Marketplace", back_populates="listings")
     user = relationship("User", back_populates="listings")
     purchases = relationship("Purchase", back_populates="listing")
+    wishlist_items = relationship("UserWishlist", back_populates="listing")
 
 
 class Purchase(Base):
@@ -176,6 +180,7 @@ class Order(Base):
         "User", foreign_keys=[seller_id], back_populates="orders_as_seller"
     )
     listing = relationship("Listing", back_populates="orders")
+    review = relationship("UserReview", back_populates="order")
 
 
 class MarketplaceRequest(Base):
@@ -209,3 +214,47 @@ User.marketplace_requests = relationship(
 
 # Add orders relationship to Listing
 Listing.orders = relationship("Order", back_populates="listing")
+
+
+class UserReview(Base):
+    """User review model for rating and reviewing other users"""
+
+    __tablename__ = "user_reviews"
+
+    id = Column(Integer, primary_key=True, index=True)
+    reviewer_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    reviewed_user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    rating = Column(Integer, nullable=False)  # 1-5 stars
+    comment = Column(Text, nullable=True)
+    order_id = Column(Integer, ForeignKey("orders.id"), nullable=True)  # Optional: link to specific order
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    # Relationships
+    reviewer = relationship("User", foreign_keys=[reviewer_id], back_populates="reviews_given")
+    reviewed_user = relationship("User", foreign_keys=[reviewed_user_id], back_populates="reviews_received")
+    order = relationship("Order", back_populates="review")
+
+
+class UserWishlist(Base):
+    """User wishlist model for saving favorite listings"""
+
+    __tablename__ = "user_wishlist"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    listing_id = Column(Integer, ForeignKey("listings.id"), nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    user = relationship("User", back_populates="wishlist")
+    listing = relationship("Listing", back_populates="wishlist_items")
+
+    # Ensure unique user-listing combination
+    __table_args__ = (
+        {"extend_existing": True},
+    )

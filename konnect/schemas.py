@@ -411,3 +411,82 @@ class MarketplaceRequestResponse(BaseModel):
     smart_contract_tx_hash: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+# User Review schemas
+class ReviewBase(BaseModel):
+    """Base review schema"""
+
+    rating: int  # 1-5 stars
+    comment: Optional[str] = None
+    order_id: Optional[int] = None
+
+
+class ReviewCreate(ReviewBase):
+    """Review creation schema"""
+
+    reviewed_user_id: int
+
+
+class ReviewUpdate(BaseModel):
+    """Review update schema"""
+
+    rating: Optional[int] = None
+    comment: Optional[str] = None
+
+
+class Review(ReviewBase):
+    """Review response schema"""
+
+    id: int
+    reviewer_id: int
+    reviewed_user_id: int
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ReviewWithDetails(Review):
+    """Review schema with reviewer details"""
+
+    reviewer_username: str
+    reviewer_full_name: Optional[str] = None
+
+
+class UserReviewSummary(BaseModel):
+    """User review summary"""
+
+    user_id: int
+    total_reviews: int
+    average_rating: float
+    rating_distribution: dict  # {1: count, 2: count, ...}
+
+
+# User Wishlist schemas
+class WishlistItem(BaseModel):
+    """Wishlist item response schema"""
+
+    id: int
+    listing_id: int
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class WishlistItemWithDetails(WishlistItem):
+    """Wishlist item with listing details"""
+
+    listing_title: str
+    listing_price: float
+    listing_category: Optional[str] = None
+    listing_description: Optional[str] = None
+    seller_username: str
+    marketplace_name: str
+
+
+class WishlistResponse(BaseModel):
+    """Wishlist response schema"""
+
+    items: List[WishlistItemWithDetails] = []
+    total_count: int
