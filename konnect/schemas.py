@@ -490,3 +490,118 @@ class WishlistResponse(BaseModel):
 
     items: List[WishlistItemWithDetails] = []
     total_count: int
+
+
+# Listing Image schemas
+class ListingImageBase(BaseModel):
+    """Base listing image schema"""
+
+    filename: str
+    original_filename: str
+    file_path: str
+    file_size: int
+    mime_type: str
+    is_primary: bool = False
+
+
+class ListingImageCreate(BaseModel):
+    """Listing image creation schema"""
+
+    is_primary: bool = False
+
+
+class ListingImage(ListingImageBase):
+    """Listing image response schema"""
+
+    id: int
+    listing_id: int
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ListingImageUploadResponse(BaseModel):
+    """Response schema for image upload"""
+
+    id: int
+    listing_id: int
+    filename: str
+    original_filename: str
+    file_path: str
+    file_size: int
+    mime_type: str
+    is_primary: bool
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# Message schemas
+class MessageBase(BaseModel):
+    """Base message schema"""
+
+    recipient_id: int
+    subject: Optional[str] = None
+    content: str
+    listing_id: Optional[int] = None
+
+
+class MessageCreate(MessageBase):
+    """Message creation schema"""
+
+    pass
+
+
+class MessageUpdate(BaseModel):
+    """Message update schema"""
+
+    is_read: Optional[bool] = None
+
+
+class Message(MessageBase):
+    """Message response schema"""
+
+    id: int
+    sender_id: int
+    is_read: bool
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class MessageWithDetails(Message):
+    """Message schema with sender and recipient details"""
+
+    sender_username: str
+    sender_full_name: Optional[str] = None
+    recipient_username: str
+    recipient_full_name: Optional[str] = None
+    listing_title: Optional[str] = None
+
+
+class MessageThread(BaseModel):
+    """Message thread schema"""
+
+    other_user_id: int
+    other_user_username: str
+    other_user_full_name: Optional[str] = None
+    last_message: Optional[Message] = None
+    unread_count: int = 0
+    total_messages: int = 0
+
+
+class MessageThreadResponse(BaseModel):
+    """Response schema for message threads"""
+
+    threads: List[MessageThread] = []
+    total_count: int
+
+
+class MessageHistoryResponse(BaseModel):
+    """Response schema for message history"""
+
+    messages: List[MessageWithDetails] = []
+    other_user_id: int
+    other_user_username: str
+    other_user_full_name: Optional[str] = None
+    total_count: int

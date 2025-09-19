@@ -1,6 +1,7 @@
 """CRUD operations for database models"""
 
 from collections import Counter
+from datetime import datetime
 from typing import List, Optional
 
 from sqlalchemy.orm import Session
@@ -902,4 +903,272 @@ def is_in_wishlist(db: Session, user_id: int, listing_id: int) -> bool:
         )
         .first()
         is not None
+    )
+
+
+# Listing Image CRUD functions
+def create_listing_image(
+    db: Session,
+    listing_id: int,
+    filename: str,
+    original_filename: str,
+    file_path: str,
+    file_size: int,
+    mime_type: str,
+    is_primary: bool = False,
+) -> models.ListingImage:
+    """Create a new listing image"""
+    # If this is set as primary, unset other primary images for this listing
+    if is_primary:
+        db.query(models.ListingImage).filter(
+            models.ListingImage.listing_id == listing_id,
+            models.ListingImage.is_primary,
+        ).update({"is_primary": False})
+
+    db_image = models.ListingImage(
+        listing_id=listing_id,
+        filename=filename,
+        original_filename=original_filename,
+        file_path=file_path,
+        file_size=file_size,
+        mime_type=mime_type,
+        is_primary=is_primary,
+    )
+    db.add(db_image)
+    db.commit()
+    db.refresh(db_image)
+    return db_image
+
+
+def get_listing_images(db: Session, listing_id: int) -> List[models.ListingImage]:
+    """Get all images for a listing"""
+    return (
+        db.query(models.ListingImage)
+        .filter(models.ListingImage.listing_id == listing_id)
+        .order_by(
+            models.ListingImage.is_primary.desc(), models.ListingImage.created_at.asc()
+        )
+        .all()
+    )
+
+
+def get_listing_image(db: Session, image_id: int) -> Optional[models.ListingImage]:
+    """Get a specific listing image"""
+    return (
+        db.query(models.ListingImage).filter(models.ListingImage.id == image_id).first()
+    )
+
+
+def delete_listing_image(db: Session, image_id: int, listing_id: int) -> bool:
+    """Delete a listing image"""
+    db_image = (
+        db.query(models.ListingImage)
+        .filter(
+            models.ListingImage.id == image_id,
+            models.ListingImage.listing_id == listing_id,
+        )
+        .first()
+    )
+
+    if not db_image:
+        return False
+
+    db.delete(db_image)
+    db.commit()
+    return True
+
+
+def set_primary_image(db: Session, image_id: int, listing_id: int) -> bool:
+    """Set an image as the primary image for a listing"""
+    # First, unset all primary images for this listing
+    db.query(models.ListingImage).filter(
+        models.ListingImage.listing_id == listing_id,
+        models.ListingImage.is_primary,
+    ).update({"is_primary": False})
+
+    # Set the specified image as primary
+    db_image = (
+        db.query(models.ListingImage)
+        .filter(
+            models.ListingImage.id == image_id,
+            models.ListingImage.listing_id == listing_id,
+        )
+        .first()
+    )
+
+    if not db_image:
+        return False
+
+    db_image.is_primary = True
+    db.commit()
+    db.refresh(db_image)
+    return True
+
+
+# Message CRUD functions
+def create_message(
+    db: Session, message: schemas.MessageCreate, sender_id: int
+) -> models.Message:
+    """Create a new message"""
+    db_message = models.Message(
+        sender_id=sender_id,
+        recipient_id=message.recipient_id,
+        listing_id=message.listing_id,
+        subject=message.subject,
+        content=message.content,
+    )
+    db.add(db_message)
+    db.commit()
+    db.refresh(db_message)
+    return db_message
+
+
+def get_message(db: Session, message_id: int) -> Optional[models.Message]:
+    """Get a specific message"""
+    return db.query(models.Message).filter(models.Message.id == message_id).first()
+
+
+def get_message_threads(
+    db: Session, user_id: int, skip: int = 0, limit: int = 100
+) -> List[dict]:
+    """Get all message threads for a user"""
+    # Get all unique users that the current user has exchanged messages with
+    sent_messages = (
+        db.query(models.Message.recipient_id)
+        .filter(models.Message.sender_id == user_id)
+        .distinct()
+        .all()
+    )
+
+    received_messages = (
+        db.query(models.Message.sender_id)
+        .filter(models.Message.recipient_id == user_id)
+        .distinct()
+        .all()
+    )
+
+    # Combine and get unique user IDs
+    all_user_ids = set()
+    for msg in sent_messages:
+        all_user_ids.add(msg[0])
+    for msg in received_messages:
+        all_user_ids.add(msg[0])
+
+    threads = []
+    for other_user_id in all_user_ids:
+        # Get user info
+        other_user = get_user(db, other_user_id)
+        if not other_user:
+            continue
+
+        # Get last message between these users
+        last_message = (
+            db.query(models.Message)
+            .filter(
+                (
+                    (models.Message.sender_id == user_id)
+                    & (models.Message.recipient_id == other_user_id)
+                )
+                | (
+                    (models.Message.sender_id == other_user_id)
+                    & (models.Message.recipient_id == user_id)
+                )
+            )
+            .order_by(models.Message.created_at.desc())
+            .first()
+        )
+
+        # Count unread messages from this user
+        unread_count = (
+            db.query(models.Message)
+            .filter(
+                models.Message.sender_id == other_user_id,
+                models.Message.recipient_id == user_id,
+                not models.Message.is_read,
+            )
+            .count()
+        )
+
+        # Count total messages between these users
+        total_messages = (
+            db.query(models.Message)
+            .filter(
+                (
+                    (models.Message.sender_id == user_id)
+                    & (models.Message.recipient_id == other_user_id)
+                )
+                | (
+                    (models.Message.sender_id == other_user_id)
+                    & (models.Message.recipient_id == user_id)
+                )
+            )
+            .count()
+        )
+
+        threads.append(
+            {
+                "other_user_id": other_user_id,
+                "other_user_username": other_user.username,
+                "other_user_full_name": other_user.full_name,
+                "last_message": last_message,
+                "unread_count": unread_count,
+                "total_messages": total_messages,
+            }
+        )
+
+    # Sort by last message time
+    threads.sort(
+        key=lambda x: x["last_message"].created_at
+        if x["last_message"]
+        else datetime.min,
+        reverse=True,
+    )
+
+    return threads[skip : skip + limit]
+
+
+def get_message_history(
+    db: Session, user_id: int, other_user_id: int, skip: int = 0, limit: int = 100
+) -> List[models.Message]:
+    """Get message history between two users"""
+    return (
+        db.query(models.Message)
+        .filter(
+            (
+                (models.Message.sender_id == user_id)
+                & (models.Message.recipient_id == other_user_id)
+            )
+            | (
+                (models.Message.sender_id == other_user_id)
+                & (models.Message.recipient_id == user_id)
+            )
+        )
+        .order_by(models.Message.created_at.asc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+
+
+def mark_messages_as_read(db: Session, user_id: int, other_user_id: int) -> int:
+    """Mark all messages from a specific user as read"""
+    updated_count = (
+        db.query(models.Message)
+        .filter(
+            models.Message.sender_id == other_user_id,
+            models.Message.recipient_id == user_id,
+            not models.Message.is_read,
+        )
+        .update({"is_read": True})
+    )
+    db.commit()
+    return updated_count
+
+
+def get_unread_message_count(db: Session, user_id: int) -> int:
+    """Get total unread message count for a user"""
+    return (
+        db.query(models.Message)
+        .filter(models.Message.recipient_id == user_id, not models.Message.is_read)
+        .count()
     )

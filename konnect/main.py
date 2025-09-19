@@ -15,7 +15,18 @@ from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from pythonjsonlogger import jsonlogger
 
 from .database import create_tables
-from .routers import admin, ai, auth, listings, marketplaces, orders, products, users
+from .routers import (
+    admin,
+    ai,
+    auth,
+    images,
+    listings,
+    marketplaces,
+    messages,
+    orders,
+    products,
+    users,
+)
 
 # Configure OpenTelemetry Metrics
 prometheus_reader = PrometheusMetricReader()
@@ -75,6 +86,8 @@ FastAPIInstrumentor.instrument_app(app)
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(listings.router)
+app.include_router(images.router)
+app.include_router(messages.router)
 app.include_router(marketplaces.router)
 app.include_router(products.router)
 app.include_router(orders.router)

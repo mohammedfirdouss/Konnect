@@ -60,6 +60,12 @@ class User(Base):
         back_populates="reviewed_user",
     )
     wishlist = relationship("UserWishlist", back_populates="user")
+    sent_messages = relationship(
+        "Message", foreign_keys="Message.sender_id", back_populates="sender"
+    )
+    received_messages = relationship(
+        "Message", foreign_keys="Message.recipient_id", back_populates="recipient"
+    )
 
 
 class Marketplace(Base):
@@ -109,6 +115,8 @@ class Listing(Base):
     user = relationship("User", back_populates="listings")
     purchases = relationship("Purchase", back_populates="listing")
     wishlist_items = relationship("UserWishlist", back_populates="listing")
+    images = relationship("ListingImage", back_populates="listing")
+    messages = relationship("Message", back_populates="listing")
 
 
 class Purchase(Base):
@@ -268,3 +276,48 @@ class UserWishlist(Base):
 
     # Ensure unique user-listing combination
     __table_args__ = ({"extend_existing": True},)
+
+
+class ListingImage(Base):
+    """Listing image model for storing image metadata"""
+
+    __tablename__ = "listing_images"
+
+    id = Column(Integer, primary_key=True, index=True)
+    listing_id = Column(Integer, ForeignKey("listings.id"), nullable=False)
+    filename = Column(String(255), nullable=False)
+    original_filename = Column(String(255), nullable=False)
+    file_path = Column(String(500), nullable=False)
+    file_size = Column(Integer, nullable=False)  # Size in bytes
+    mime_type = Column(String(100), nullable=False)
+    is_primary = Column(Boolean, default=False)  # Primary image for the listing
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    listing = relationship("Listing", back_populates="images")
+
+
+class Message(Base):
+    """Direct message model for user communication"""
+
+    __tablename__ = "messages"
+
+    id = Column(Integer, primary_key=True, index=True)
+    sender_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    recipient_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    listing_id = Column(
+        Integer, ForeignKey("listings.id"), nullable=True
+    )  # Optional: linked to specific listing
+    subject = Column(String(255), nullable=True)
+    content = Column(Text, nullable=False)
+    is_read = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    sender = relationship(
+        "User", foreign_keys=[sender_id], back_populates="sent_messages"
+    )
+    recipient = relationship(
+        "User", foreign_keys=[recipient_id], back_populates="received_messages"
+    )
+    listing = relationship("Listing", back_populates="messages")
