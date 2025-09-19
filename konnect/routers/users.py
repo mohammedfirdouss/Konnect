@@ -48,7 +48,11 @@ async def get_user_recommendations(
 
 
 # User Reviews endpoints
-@router.post("/{user_id}/reviews", response_model=schemas.Review, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{user_id}/reviews",
+    response_model=schemas.Review,
+    status_code=status.HTTP_201_CREATED,
+)
 async def create_user_review(
     user_id: int,
     review: schemas.ReviewCreate,
@@ -59,29 +63,24 @@ async def create_user_review(
     # Validate that the user is reviewing someone else
     if user_id == current_user.id:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="You cannot review yourself"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="You cannot review yourself"
         )
-    
+
     # Validate that the reviewed user exists
     reviewed_user = crud.get_user(db, user_id)
     if not reviewed_user:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
         )
-    
+
     # Set the reviewed_user_id to match the URL parameter
     review.reviewed_user_id = user_id
-    
+
     try:
         db_review = crud.create_user_review(db, review, current_user.id)
         return db_review
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.get("/{user_id}/reviews", response_model=List[schemas.ReviewWithDetails])
@@ -96,21 +95,20 @@ async def get_user_reviews(
     user = crud.get_user(db, user_id)
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
         )
-    
+
     reviews = crud.get_user_reviews(db, user_id, skip, limit)
-    
+
     # Add reviewer details to each review
     reviews_with_details = []
     for review in reviews:
         reviewer = crud.get_user(db, review.reviewer_id)
         review_dict = review.__dict__.copy()
-        review_dict['reviewer_username'] = reviewer.username if reviewer else "Unknown"
-        review_dict['reviewer_full_name'] = reviewer.full_name if reviewer else None
+        review_dict["reviewer_username"] = reviewer.username if reviewer else "Unknown"
+        review_dict["reviewer_full_name"] = reviewer.full_name if reviewer else None
         reviews_with_details.append(schemas.ReviewWithDetails(**review_dict))
-    
+
     return reviews_with_details
 
 
@@ -124,10 +122,9 @@ async def get_user_review_summary(
     user = crud.get_user(db, user_id)
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
         )
-    
+
     summary = crud.get_user_review_summary(db, user_id)
     return schemas.UserReviewSummary(**summary)
 
@@ -142,14 +139,17 @@ async def get_user_wishlist(
 ):
     """Retrieve the list of listings that the current user has saved to their wishlist"""
     wishlist_items = crud.get_wishlist_with_details(db, current_user.id, skip, limit)
-    
+
     return schemas.WishlistResponse(
-        items=wishlist_items,
-        total_count=len(wishlist_items)
+        items=wishlist_items, total_count=len(wishlist_items)
     )
 
 
-@router.post("/me/wishlist/{listing_id}", response_model=schemas.WishlistItem, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/me/wishlist/{listing_id}",
+    response_model=schemas.WishlistItem,
+    status_code=status.HTTP_201_CREATED,
+)
 async def add_to_wishlist(
     listing_id: int,
     current_user: schemas.User = Depends(get_current_active_user),
@@ -160,10 +160,7 @@ async def add_to_wishlist(
         wishlist_item = crud.add_to_wishlist(db, current_user.id, listing_id)
         return wishlist_item
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.delete("/me/wishlist/{listing_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -177,5 +174,5 @@ async def remove_from_wishlist(
     if not success:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Listing not found in wishlist"
+            detail="Listing not found in wishlist",
         )

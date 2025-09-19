@@ -51,8 +51,14 @@ class User(Base):
     orders_as_seller = relationship(
         "Order", foreign_keys="Order.seller_id", back_populates="seller"
     )
-    reviews_given = relationship("UserReview", foreign_keys="UserReview.reviewer_id", back_populates="reviewer")
-    reviews_received = relationship("UserReview", foreign_keys="UserReview.reviewed_user_id", back_populates="reviewed_user")
+    reviews_given = relationship(
+        "UserReview", foreign_keys="UserReview.reviewer_id", back_populates="reviewer"
+    )
+    reviews_received = relationship(
+        "UserReview",
+        foreign_keys="UserReview.reviewed_user_id",
+        back_populates="reviewed_user",
+    )
     wishlist = relationship("UserWishlist", back_populates="user")
 
 
@@ -226,7 +232,9 @@ class UserReview(Base):
     reviewed_user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     rating = Column(Integer, nullable=False)  # 1-5 stars
     comment = Column(Text, nullable=True)
-    order_id = Column(Integer, ForeignKey("orders.id"), nullable=True)  # Optional: link to specific order
+    order_id = Column(
+        Integer, ForeignKey("orders.id"), nullable=True
+    )  # Optional: link to specific order
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(
         DateTime,
@@ -235,8 +243,12 @@ class UserReview(Base):
     )
 
     # Relationships
-    reviewer = relationship("User", foreign_keys=[reviewer_id], back_populates="reviews_given")
-    reviewed_user = relationship("User", foreign_keys=[reviewed_user_id], back_populates="reviews_received")
+    reviewer = relationship(
+        "User", foreign_keys=[reviewer_id], back_populates="reviews_given"
+    )
+    reviewed_user = relationship(
+        "User", foreign_keys=[reviewed_user_id], back_populates="reviews_received"
+    )
     order = relationship("Order", back_populates="review")
 
 
@@ -255,6 +267,4 @@ class UserWishlist(Base):
     listing = relationship("Listing", back_populates="wishlist_items")
 
     # Ensure unique user-listing combination
-    __table_args__ = (
-        {"extend_existing": True},
-    )
+    __table_args__ = ({"extend_existing": True},)
