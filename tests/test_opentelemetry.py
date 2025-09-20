@@ -2,7 +2,6 @@
 Tests for OpenTelemetry integration
 """
 
-import json
 from fastapi.testclient import TestClient
 
 from main import app
@@ -22,11 +21,11 @@ def test_metrics_content():
     response = client.get("/metrics")
     assert response.status_code == 200
     content = response.text
-    
+
     # Check for basic Prometheus metrics format
     assert "# HELP" in content
     assert "# TYPE" in content
-    
+
     # Check for HTTP server metrics (these are provided by OpenTelemetry FastAPI instrumentation)
     assert "http_server_duration_milliseconds" in content or "http_" in content
 
@@ -36,11 +35,11 @@ def test_http_request_instrumentation():
     # Make a request to trigger instrumentation
     response = client.get("/")
     assert response.status_code == 200
-    
+
     # Check metrics endpoint for HTTP instrumentation
     metrics_response = client.get("/metrics")
     assert metrics_response.status_code == 200
-    
+
     # Verify HTTP metrics are present
     metrics_content = metrics_response.text
     assert "http_server" in metrics_content.lower()
@@ -75,7 +74,7 @@ def test_openapi_json_with_opentelemetry():
     response = client.get("/openapi.json")
     assert response.status_code == 200
     openapi_data = response.json()
-    
+
     # Check that metrics endpoint is documented
     assert "/metrics" in openapi_data["paths"]
     assert "get" in openapi_data["paths"]["/metrics"]

@@ -4,7 +4,7 @@
 
 import * as anchor from "@coral-xyz/anchor";
 
-module.exports = async function (provider: anchor.AnchorProvider) {
+export = async function (provider: anchor.AnchorProvider) {
   // Configure client to use the provider.
   anchor.setProvider(provider);
 
