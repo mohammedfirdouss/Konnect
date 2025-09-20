@@ -5,8 +5,27 @@ from datetime import datetime
 from typing import List, Optional
 
 from sqlalchemy.orm import Session
+from passlib.context import CryptContext
 
 from . import models, schemas
+
+# Password hashing context
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+def create_user(db: Session, user: schemas.UserCreate) -> models.User:
+    """Create a new user (for testing purposes)"""
+    hashed_password = pwd_context.hash(user.password)
+    db_user = models.User(
+        username=user.username,
+        email=user.email,
+        full_name=user.full_name,
+        hashed_password=hashed_password,
+    )
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+    return db_user
 
 
 def get_user(db: Session, user_id: int) -> Optional[models.User]:

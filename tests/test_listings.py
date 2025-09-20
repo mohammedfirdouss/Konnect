@@ -31,8 +31,8 @@ def override_get_db():
 
 app.dependency_overrides[get_db] = override_get_db
 
+# Create client with mocked Supabase
 client = TestClient(app)
-
 
 @pytest.fixture(autouse=True)
 def setup_database():
@@ -46,7 +46,7 @@ def setup_database():
 
 
 @pytest.fixture
-def test_user():
+def test_user(mock_supabase):
     """Create a test user and return authentication token"""
     db = TestingSessionLocal()
     try:
