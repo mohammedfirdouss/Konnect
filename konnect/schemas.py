@@ -6,6 +6,9 @@ from typing import List, Optional
 from pydantic import BaseModel, ConfigDict
 
 
+from uuid import UUID
+
+
 # User schemas
 class UserBase(BaseModel):
     """Base user schema"""
@@ -26,24 +29,15 @@ class UserUpdate(BaseModel):
 
     email: Optional[str] = None
     full_name: Optional[str] = None
-    is_active: Optional[bool] = None
 
 
 class User(UserBase):
     """User response schema"""
 
-    id: int
-    is_active: bool
+    id: UUID
     created_at: datetime
-    updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
-
-
-class UserInDB(User):
-    """User schema for database storage"""
-
-    hashed_password: str
 
 
 # Token schemas
@@ -52,12 +46,7 @@ class Token(BaseModel):
 
     access_token: str
     token_type: str
-
-
-class TokenData(BaseModel):
-    """Token data schema"""
-
-    username: Optional[str] = None
+    refresh_token: Optional[str] = None
 
 
 # Marketplace schemas

@@ -1,8 +1,8 @@
-"""Images router for listing image uploads"""
+"""Images router for listing image uploads using Supabase Storage"""
 
 import os
 import uuid
-from typing import List
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
 from sqlalchemy.orm import Session
@@ -10,28 +10,24 @@ from sqlalchemy.orm import Session
 from .. import crud, schemas
 from ..database import get_db
 from ..dependencies import get_current_active_user
+from ..supabase_client import supabase
 
 router = APIRouter(prefix="/listings", tags=["images"])
 
 # Configuration for file uploads
-UPLOAD_DIR = "uploads/images"
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
-
-# Ensure upload directory exists
-os.makedirs(UPLOAD_DIR, exist_ok=True)
+STORAGE_BUCKET_NAME = "listing_images"
 
 
 def validate_image_file(file: UploadFile) -> None:
     """Validate uploaded image file"""
-    # Check file size
     if file.size and file.size > MAX_FILE_SIZE:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             detail=f"File size exceeds maximum allowed size of {MAX_FILE_SIZE // (1024 * 1024)}MB",
         )
 
-    # Check file extension
     if file.filename:
         file_ext = os.path.splitext(file.filename.lower())[1]
         if file_ext not in ALLOWED_EXTENSIONS:
@@ -41,18 +37,24 @@ def validate_image_file(file: UploadFile) -> None:
             )
 
 
-def save_uploaded_file(file: UploadFile, listing_id: int) -> tuple[str, str, int]:
-    """Save uploaded file and return filename, filepath, and size"""
-    # Generate unique filename
+async def upload_file_to_supabase(
+    file: UploadFile, listing_id: int
+) -> tuple[str, str, int]:
+    """Upload file to Supabase Storage and return filename, filepath, and size"""
     file_ext = os.path.splitext(file.filename.lower())[1]
     unique_filename = f"{listing_id}_{uuid.uuid4()}{file_ext}"
-    file_path = os.path.join(UPLOAD_DIR, unique_filename)
+    file_path = f"{listing_id}/{unique_filename}"
 
-    # Save file
-    with open(file_path, "wb") as buffer:
-        content = file.file.read()
-        buffer.write(content)
-        file_size = len(content)
+    content = await file.read()
+    file_size = len(content)
+
+    try:
+        supabase.storage.from_(STORAGE_BUCKET_NAME).upload(file=content, path=file_path)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to upload to Supabase Storage: {str(e)}",
+        )
 
     return unique_filename, file_path, file_size
 
@@ -69,8 +71,7 @@ async def upload_listing_images(
     current_user: schemas.User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ):
-    """Upload one or more images for a specific listing"""
-    # Verify listing exists and user owns it
+    """Upload one or more images for a specific listing to Supabase Storage"""
     listing = crud.get_listing(db, listing_id)
     if not listing:
         raise HTTPException(
@@ -88,7 +89,7 @@ async def upload_listing_images(
             status_code=status.HTTP_400_BAD_REQUEST, detail="No files provided"
         )
 
-    if len(files) > 10:  # Limit number of images per listing
+    if len(files) > 10:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Maximum 10 images allowed per listing",
@@ -96,53 +97,29 @@ async def upload_listing_images(
 
     uploaded_images = []
 
-    try:
-        for i, file in enumerate(files):
-            # Validate file
-            validate_image_file(file)
+    for i, file in enumerate(files):
+        validate_image_file(file)
+        filename, file_path, file_size = await upload_file_to_supabase(file, listing_id)
+        set_as_primary = is_primary and i == 0
 
-            # Save file
-            filename, file_path, file_size = save_uploaded_file(file, listing_id)
+        db_image = crud.create_listing_image(
+            db=db,
+            listing_id=listing_id,
+            filename=filename,
+            original_filename=file.filename,
+            file_path=file_path,
+            file_size=file_size,
+            mime_type=file.content_type or "image/jpeg",
+            is_primary=set_as_primary,
+        )
+        uploaded_images.append(db_image)
 
-            # Set first image as primary if requested
-            set_as_primary = is_primary and i == 0
-
-            # Create database record
-            db_image = crud.create_listing_image(
-                db=db,
-                listing_id=listing_id,
-                filename=filename,
-                original_filename=file.filename,
-                file_path=file_path,
-                file_size=file_size,
-                mime_type=file.content_type or "image/jpeg",
-                is_primary=set_as_primary,
-            )
-
-            uploaded_images.append(db_image)
-
-        # Return the first uploaded image (or all if single upload)
-        if uploaded_images:
-            return uploaded_images[0]
-        else:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to upload images",
-            )
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        # Clean up uploaded files on error
-        for image in uploaded_images:
-            try:
-                if os.path.exists(image.file_path):
-                    os.remove(image.file_path)
-            except Exception:
-                pass
+    if uploaded_images:
+        return uploaded_images[0]
+    else:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to upload images: {str(e)}",
+            detail="Failed to upload images",
         )
 
 
@@ -150,9 +127,11 @@ async def upload_listing_images(
 async def get_listing_images(
     listing_id: int,
     db: Session = Depends(get_db),
+    width: Optional[int] = None,
+    height: Optional[int] = None,
+    resize: Optional[str] = None,  # "cover", "contain", "fill"
 ):
-    """Get all images for a specific listing"""
-    # Verify listing exists
+    """Get all images for a specific listing, with optional transformations."""
     listing = crud.get_listing(db, listing_id)
     if not listing:
         raise HTTPException(
@@ -160,6 +139,26 @@ async def get_listing_images(
         )
 
     images = crud.get_listing_images(db, listing_id)
+
+    transform_options = {}
+    if width:
+        transform_options["width"] = width
+    if height:
+        transform_options["height"] = height
+    if resize:
+        transform_options["resize"] = resize
+
+    # Construct public URLs for the images
+    for image in images:
+        if transform_options:
+            image.file_path = supabase.storage.from_(
+                STORAGE_BUCKET_NAME
+            ).get_public_url(image.file_path, options={"transform": transform_options})
+        else:
+            image.file_path = supabase.storage.from_(
+                STORAGE_BUCKET_NAME
+            ).get_public_url(image.file_path)
+
     return images
 
 
@@ -172,8 +171,7 @@ async def delete_listing_image(
     current_user: schemas.User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ):
-    """Delete a specific image from a listing"""
-    # Verify listing exists and user owns it
+    """Delete a specific image from a listing and Supabase Storage"""
     listing = crud.get_listing(db, listing_id)
     if not listing:
         raise HTTPException(
@@ -186,27 +184,19 @@ async def delete_listing_image(
             detail="You can only delete images from your own listings",
         )
 
-    # Get image to delete
     image = crud.get_listing_image(db, image_id)
     if not image or image.listing_id != listing_id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Image not found"
         )
 
-    # Delete file from filesystem
     try:
-        if os.path.exists(image.file_path):
-            os.remove(image.file_path)
-    except Exception:
-        pass  # Continue even if file deletion fails
+        supabase.storage.from_(STORAGE_BUCKET_NAME).remove([image.file_path])
+    except Exception as e:
+        # Log the error but proceed with deleting the database record
+        print(f"Error deleting file from Supabase Storage: {e}")
 
-    # Delete from database
-    success = crud.delete_listing_image(db, image_id, listing_id)
-    if not success:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to delete image",
-        )
+    crud.delete_listing_image(db, image_id, listing_id)
 
 
 @router.patch("/{listing_id}/images/{image_id}/primary", status_code=status.HTTP_200_OK)
@@ -217,7 +207,6 @@ async def set_primary_image(
     db: Session = Depends(get_db),
 ):
     """Set an image as the primary image for a listing"""
-    # Verify listing exists and user owns it
     listing = crud.get_listing(db, listing_id)
     if not listing:
         raise HTTPException(
@@ -230,7 +219,6 @@ async def set_primary_image(
             detail="You can only modify images for your own listings",
         )
 
-    # Set as primary
     success = crud.set_primary_image(db, image_id, listing_id)
     if not success:
         raise HTTPException(

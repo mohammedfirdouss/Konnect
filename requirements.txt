@@ -20,3 +20,4 @@ opentelemetry-instrumentation-fastapi==0.58b0
 opentelemetry-exporter-prometheus==0.58b0
 opentelemetry-semantic-conventions==0.58b0
 adk==0.0.5
+supabase==2.19.0
