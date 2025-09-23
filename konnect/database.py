@@ -36,4 +36,10 @@ def get_db() -> Generator[Session, None, None]:
 
 def create_tables():
     """Create database tables"""
-    Base.metadata.create_all(bind=engine)
+    try:
+        Base.metadata.create_all(bind=engine)
+        print(f"✅ Database tables created successfully using: {DATABASE_URL[:50]}...")
+    except Exception as e:
+        print(f"❌ Failed to create database tables: {e}")
+        print(f"Database URL: {DATABASE_URL[:50]}...")
+        raise

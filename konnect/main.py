@@ -70,8 +70,13 @@ logger = setup_logging()
 async def lifespan(app: FastAPI):
     """Initialize database tables on startup"""
     logger.info("Starting up Konnect application")
-    create_tables()
-    logger.info("Database tables created successfully")
+    try:
+        create_tables()
+        logger.info("Database tables created successfully")
+    except Exception as e:
+        logger.error(f"Failed to initialize database: {e}")
+        # Don't fail startup completely - let the app run and handle DB errors gracefully
+        logger.warning("Continuing startup without database initialization")
     yield
 
 
