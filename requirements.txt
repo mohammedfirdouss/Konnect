@@ -1,7 +1,8 @@
 fastapi==0.116.1
 uvicorn[standard]==0.35.0
 python-jose[cryptography]==3.3.0
-passlib[bcrypt]==1.7.4
+passlib[bcrypt]>=1.7.4
+bcrypt>=4.0.0
 python-multipart==0.0.12
 uvicorn==0.35.0
 pytest==8.4.2
