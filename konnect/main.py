@@ -4,6 +4,10 @@ Main application module for Konnect
 
 import logging
 from contextlib import asynccontextmanager
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 from fastapi import FastAPI, Response
 from opentelemetry import metrics, trace

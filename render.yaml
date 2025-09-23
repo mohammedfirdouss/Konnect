@@ -1,7 +1,6 @@
-
 services:
   - type: web
-    name: konnect-web
+    name: connect
     env: python
     buildCommand: "pip install -r requirements.txt"
     startCommand: "alembic upgrade head && uvicorn konnect.main:app --host 0.0.0.0 --port $PORT"
@@ -32,66 +31,13 @@ services:
         value: /app
       - key: REDIS_EXPIRE_TIME
         value: 3600
-
-  - type: worker
-    name: konnect-worker
-    env: python
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "celery -A konnect.tasks worker --loglevel=info"
-    envVars:
-      - key: DATABASE_URL
-        fromDatabase:
-          name: konnect-db
-          property: connectionString
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: konnect-redis
-          property: connectionString
-      - key: CELERY_BROKER_URL
-        fromService:
-          type: redis
-          name: konnect-redis
-          property: connectionString
-      - key: CELERY_RESULT_BACKEND
-        fromService:
-          type: redis
-          name: konnect-redis
-          property: connectionString
-      - key: PYTHONPATH
-        value: /app
-      - key: REDIS_EXPIRE_TIME
-        value: 3600
-
-  - type: worker
-    name: konnect-beat
-    env: python
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "celery -A konnect.tasks beat --loglevel=info"
-    envVars:
-      - key: DATABASE_URL
-        fromDatabase:
-          name: konnect-db
-          property: connectionString
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: konnect-redis
-          property: connectionString
-      - key: CELERY_BROKER_URL
-        fromService:
-          type: redis
-          name: konnect-redis
-          property: connectionString
-      - key: CELERY_RESULT_BACKEND
-        fromService:
-          type: redis
-          name: konnect-redis
-          property: connectionString
-      - key: PYTHONPATH
-        value: /app
-      - key: REDIS_EXPIRE_TIME
-        value: 3600
+      # Supabase Configuration - Set these in Render UI Environment Variables
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
 
   - type: pserv
     name: konnect-redis

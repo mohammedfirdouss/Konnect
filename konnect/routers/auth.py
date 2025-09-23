@@ -12,6 +12,12 @@ router = APIRouter(prefix="/auth", tags=["authentication"])
 @router.post("/register", response_model=User)
 async def register_user(user: UserCreate):
     """Register a new user with Supabase"""
+    if supabase is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Supabase client not configured. Please check environment variables."
+        )
+    
     try:
         response = supabase.auth.sign_up(
             {
@@ -45,6 +51,12 @@ async def register_user(user: UserCreate):
 @router.post("/token", response_model=Token)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
     """Login and get access token from Supabase"""
+    if supabase is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Supabase client not configured. Please check environment variables."
+        )
+    
     try:
         response = supabase.auth.sign_in_with_password(
             {"email": form_data.username, "password": form_data.password}
