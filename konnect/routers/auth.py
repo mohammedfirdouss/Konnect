@@ -3,6 +3,7 @@
 import logging
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
+from supabase import AuthApiError, AuthInvalidCredentialsError
 
 from ..supabase_client import supabase
 from ..schemas import UserCreate, Token
@@ -52,10 +53,17 @@ async def register_user(user: UserCreate):
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Could not register user",
             )
-    except Exception as e:
-        logger.error(f"Registration error: {e}")
+    except AuthApiError as e:
+        logger.error(f"Supabase auth API error during registration: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Registration failed - please check your information"
+        )
+    except Exception as e:
+        logger.error(f"Unexpected registration error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+            detail="Internal server error"
         )
 
 
@@ -89,19 +97,26 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
                 detail="Incorrect email or password",
                 headers={"WWW-Authenticate": "Bearer"},
             )
+    except AuthInvalidCredentialsError as e:
+        logger.warning(f"Invalid credentials for: {form_data.username}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    except AuthApiError as e:
+        logger.error(f"Supabase auth API error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication failed",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     except Exception as e:
-        logger.error(f"Login error: {e}")
-        # Check if it's an authentication error from Supabase
-        if "Invalid login credentials" in str(e) or "400" in str(e):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid email or password",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
-        else:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
-            )
+        logger.error(f"Unexpected login error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+            detail="Internal server error"
+        )
 
 
 @router.get("/me")
