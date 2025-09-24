@@ -6,6 +6,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 
 from ..supabase_client import supabase
 from ..schemas import UserCreate, Token
+from ..dependencies import get_current_user
 
 logger = logging.getLogger(__name__)
 
