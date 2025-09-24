@@ -1,21 +1,19 @@
 """FastAPI dependencies for authentication using Supabase"""
 
+import logging
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from uuid import UUID
 
-from . import crud
-from .database import get_db
-from .schemas import User
 from .supabase_client import supabase
+
+logger = logging.getLogger(__name__)
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
 
 
-async def get_current_user(
-    token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)
-) -> User:
+async def get_current_user(token: str = Depends(oauth2_scheme)) -> dict:
     """Get the current authenticated user from Supabase token"""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -23,50 +21,59 @@ async def get_current_user(
         headers={"WWW-Authenticate": "Bearer"},
     )
 
+    if not supabase:
+        logger.error("Supabase client not configured")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Authentication service not configured"
+        )
+
     try:
         response = supabase.auth.get_user(token)
         if not response.user:
+            logger.warning("Invalid token provided")
             raise credentials_exception
 
-        # The user object from Supabase has the user's ID.
-        # We can use this ID to get the user's profile from our database.
-        user_id = response.user.id
-        user = crud.get_user(db, user_id=UUID(user_id))
-        if user is None:
-            # This case can happen if a user is deleted from the profiles table but still has a valid token.
+        # Get user profile from Supabase
+        profile_response = supabase.table('profiles').select('*').eq('id', response.user.id).single().execute()
+        
+        if not profile_response.data:
+            logger.warning(f"Profile not found for user {response.user.id}")
             raise credentials_exception
 
-        return User.model_validate(user)
+        profile = profile_response.data
+        return {
+            "id": profile["id"],
+            "username": profile["username"],
+            "email": response.user.email,
+            "full_name": profile["full_name"],
+            "role": profile["role"],
+            "is_verified_seller": profile["is_verified_seller"],
+            "created_at": profile["created_at"],
+        }
 
-    except Exception:
+    except Exception as e:
+        logger.error(f"Authentication error: {e}")
         raise credentials_exception
 
 
-async def get_current_active_user(
-    current_user: User = Depends(get_current_user),
-) -> User:
+async def get_current_active_user(current_user: dict = Depends(get_current_user)) -> dict:
     """Get the current active user"""
-    # Supabase handles user activation (e.g. email confirmation).
-    # You can add more checks here if needed, for example, if you have a `is_active` flag in your `profiles` table.
     return current_user
 
 
-async def require_admin_role(
-    current_user: User = Depends(get_current_active_user),
-) -> User:
+async def require_admin_role(current_user: dict = Depends(get_current_active_user)) -> dict:
     """Require admin role for the current user"""
-    if current_user.role != "admin":
+    if current_user.get("role") != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required"
         )
     return current_user
 
 
-async def require_seller_role(
-    current_user: User = Depends(get_current_active_user),
-) -> User:
+async def require_seller_role(current_user: dict = Depends(get_current_active_user)) -> dict:
     """Require seller role for the current user"""
-    if current_user.role not in ["seller", "admin"]:
+    if current_user.get("role") not in ["seller", "admin"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Seller access required"
         )
