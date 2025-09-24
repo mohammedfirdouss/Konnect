@@ -91,9 +91,17 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
             )
     except Exception as e:
         logger.error(f"Login error: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
-        )
+        # Check if it's an authentication error from Supabase
+        if "Invalid login credentials" in str(e) or "400" in str(e):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid email or password",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+            )
 
 
 @router.get("/me")
