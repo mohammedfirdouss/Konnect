@@ -1,7 +1,7 @@
 """Products router for advanced product search and filtering"""
 
 import logging
-from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi import APIRouter, Query, HTTPException
 
 from ..schemas import ProductSearchFilters, ProductSearchResponse, ProductSearchResult
 from ..supabase_client import supabase
@@ -53,11 +53,7 @@ async def search_products(
         offset = (page - 1) * page_size
 
         # Build Supabase query
-        query_builder = (
-            supabase.table("listings")
-            .select("*")
-            .eq("is_active", True)
-        )
+        query_builder = supabase.table("listings").select("*").eq("is_active", True)
 
         # Apply filters
         if category:
@@ -114,8 +110,10 @@ async def search_products(
             results.append(result)
 
         # Get total count for pagination
-        count_query = supabase.table("listings").select("id", count="exact").eq("is_active", True)
-        
+        count_query = (
+            supabase.table("listings").select("id", count="exact").eq("is_active", True)
+        )
+
         if category:
             count_query = count_query.eq("category", category)
         if marketplace_id:
@@ -125,7 +123,9 @@ async def search_products(
         if max_price is not None:
             count_query = count_query.lte("price", max_price)
         if query:
-            count_query = count_query.or_(f"title.ilike.%{query}%,description.ilike.%{query}%")
+            count_query = count_query.or_(
+                f"title.ilike.%{query}%,description.ilike.%{query}%"
+            )
 
         count_response = count_query.execute()
         total_count = count_response.count if count_response.count else 0
@@ -170,7 +170,9 @@ async def get_product_categories():
         )
 
         # Extract unique categories
-        categories = list(set([item["category"] for item in response.data if item["category"]]))
+        categories = list(
+            set([item["category"] for item in response.data if item["category"]])
+        )
         categories.sort()  # Sort alphabetically
 
         return {"categories": categories}

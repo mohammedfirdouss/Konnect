@@ -109,11 +109,7 @@ async def read_order(
     try:
         # Get the order
         order_response = (
-            supabase.table("orders")
-            .select("*")
-            .eq("id", order_id)
-            .single()
-            .execute()
+            supabase.table("orders").select("*").eq("id", order_id).single().execute()
         )
 
         if not order_response.data:
@@ -124,7 +120,10 @@ async def read_order(
         order = order_response.data
 
         # Only buyer or seller can view the order
-        if order["buyer_id"] != current_user["id"] and order["seller_id"] != current_user["id"]:
+        if (
+            order["buyer_id"] != current_user["id"]
+            and order["seller_id"] != current_user["id"]
+        ):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Not authorized to view this order",
@@ -158,11 +157,7 @@ async def confirm_delivery(
     try:
         # Get the order
         order_response = (
-            supabase.table("orders")
-            .select("*")
-            .eq("id", order_id)
-            .single()
-            .execute()
+            supabase.table("orders").select("*").eq("id", order_id).single().execute()
         )
 
         if not order_response.data:
@@ -232,11 +227,7 @@ async def dispute_order(
     try:
         # Get the order
         order_response = (
-            supabase.table("orders")
-            .select("*")
-            .eq("id", order_id)
-            .single()
-            .execute()
+            supabase.table("orders").select("*").eq("id", order_id).single().execute()
         )
 
         if not order_response.data:

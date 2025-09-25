@@ -22,8 +22,10 @@ from .routers import (
     admin,
     ai,
     auth,
+    images,
     listings,
     marketplaces,
+    messages,
     orders,
     products,
     users,
@@ -119,6 +121,8 @@ app.include_router(products.router)
 app.include_router(orders.router)
 app.include_router(ai.router)
 app.include_router(admin.router)
+app.include_router(images.router)
+app.include_router(messages.router)
 
 
 @app.get("/")

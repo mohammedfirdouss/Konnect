@@ -33,11 +33,15 @@ async def get_admin_stats(
 
     try:
         # Get total users
-        users_response = supabase.table("profiles").select("id", count="exact").execute()
+        users_response = (
+            supabase.table("profiles").select("id", count="exact").execute()
+        )
         total_users = users_response.count if users_response.count else 0
 
         # Get total listings
-        listings_response = supabase.table("listings").select("id", count="exact").execute()
+        listings_response = (
+            supabase.table("listings").select("id", count="exact").execute()
+        )
         total_listings = listings_response.count if listings_response.count else 0
 
         # Get active listings
@@ -47,7 +51,9 @@ async def get_admin_stats(
             .eq("is_active", True)
             .execute()
         )
-        active_listings = active_listings_response.count if active_listings_response.count else 0
+        active_listings = (
+            active_listings_response.count if active_listings_response.count else 0
+        )
 
         # Get total orders
         orders_response = supabase.table("orders").select("id", count="exact").execute()
@@ -61,7 +67,9 @@ async def get_admin_stats(
             .execute()
         )
         pending_marketplace_requests = (
-            marketplace_requests_response.count if marketplace_requests_response.count else 0
+            marketplace_requests_response.count
+            if marketplace_requests_response.count
+            else 0
         )
 
         # Get verified sellers
@@ -71,7 +79,9 @@ async def get_admin_stats(
             .eq("is_verified_seller", True)
             .execute()
         )
-        verified_sellers = verified_sellers_response.count if verified_sellers_response.count else 0
+        verified_sellers = (
+            verified_sellers_response.count if verified_sellers_response.count else 0
+        )
 
         stats = AdminStats(
             total_users=total_users,
@@ -174,21 +184,26 @@ async def verify_seller(
 
         if seller["is_verified_seller"]:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="Seller is already verified"
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Seller is already verified",
             )
 
         # TODO: Mint verification NFT on Solana
         # This would call a smart contract to mint an NFT proving seller verification
-        nft_mint_tx_hash = "placeholder_nft_mint_tx_hash"  # Replace with actual transaction
+        nft_mint_tx_hash = (
+            "placeholder_nft_mint_tx_hash"  # Replace with actual transaction
+        )
 
         # Update seller verification status
         update_response = (
             supabase.table("profiles")
-            .update({
-                "is_verified_seller": True,
-                "verification_nft_mint": nft_mint_tx_hash,
-                "updated_at": "now()"
-            })
+            .update(
+                {
+                    "is_verified_seller": True,
+                    "verification_nft_mint": nft_mint_tx_hash,
+                    "updated_at": "now()",
+                }
+            )
             .eq("id", seller_id)
             .execute()
         )
@@ -241,12 +256,7 @@ async def remove_listing(
             )
 
         # Delete the listing (admin forced removal)
-        delete_response = (
-            supabase.table("listings")
-            .delete()
-            .eq("id", product_id)
-            .execute()
-        )
+        supabase.table("listings").delete().eq("id", product_id).execute()
 
         return {"message": "Listing removed successfully"}
 
@@ -341,7 +351,9 @@ async def approve_marketplace_request(
             "smart_contract_address": contract_tx_hash,
         }
 
-        marketplace_response = supabase.table("marketplaces").insert(marketplace_data).execute()
+        marketplace_response = (
+            supabase.table("marketplaces").insert(marketplace_data).execute()
+        )
 
         if not marketplace_response.data:
             raise HTTPException(
@@ -352,16 +364,13 @@ async def approve_marketplace_request(
         marketplace = marketplace_response.data[0]
 
         # Update request status
-        update_response = (
-            supabase.table("marketplace_requests")
-            .update({
+        supabase.table("marketplace_requests").update(
+            {
                 "status": "approved",
                 "smart_contract_tx_hash": contract_tx_hash,
-                "updated_at": "now()"
-            })
-            .eq("id", request_id)
-            .execute()
-        )
+                "updated_at": "now()",
+            }
+        ).eq("id", request_id).execute()
 
         return {
             "message": "Marketplace request approved",
@@ -419,15 +428,15 @@ async def reject_marketplace_request(
         # Reject the request
         update_response = (
             supabase.table("marketplace_requests")
-            .update({
-                "status": "rejected",
-                "updated_at": "now()"
-            })
+            .update({"status": "rejected", "updated_at": "now()"})
             .eq("id", request_id)
             .execute()
         )
 
-        return {"message": "Marketplace request rejected", "request": update_response.data[0]}
+        return {
+            "message": "Marketplace request rejected",
+            "request": update_response.data[0],
+        }
 
     except HTTPException:
         # Re-raise HTTP exceptions
