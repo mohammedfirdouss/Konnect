@@ -35,13 +35,30 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> dict:
             raise credentials_exception
 
         # Get user profile from Supabase
-        profile_response = supabase.table('profiles').select('*').eq('id', response.user.id).single().execute()
+        profile_response = supabase.table('profiles').select('*').eq('id', response.user.id).execute()
         
         if not profile_response.data:
-            logger.warning(f"Profile not found for user {response.user.id}")
-            raise credentials_exception
-
-        profile = profile_response.data
+            logger.warning(f"Profile not found for user {response.user.id}, creating one...")
+            # Create profile if it doesn't exist
+            try:
+                profile_data = {
+                    'id': response.user.id,
+                    'username': response.user.user_metadata.get('username', response.user.email.split('@')[0]),
+                    'full_name': response.user.user_metadata.get('full_name', ''),
+                    'role': 'buyer'
+                }
+                create_response = supabase.table('profiles').insert(profile_data).execute()
+                if create_response.data:
+                    profile = create_response.data[0]
+                    logger.info(f"Created profile for user {response.user.id}")
+                else:
+                    logger.error(f"Failed to create profile for user {response.user.id}")
+                    raise credentials_exception
+            except Exception as e:
+                logger.error(f"Error creating profile for user {response.user.id}: {e}")
+                raise credentials_exception
+        else:
+            profile = profile_response.data[0]
         return {
             "id": profile["id"],
             "username": profile["username"],
