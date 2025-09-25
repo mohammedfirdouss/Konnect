@@ -359,7 +359,7 @@ class ProductSearchResult(BaseModel):
     category: Optional[str] = None
     marketplace_id: int
     marketplace_name: str
-    seller_id: int
+    seller_id: str  # Changed to str for UUID
     seller_username: str
     seller_verified: bool
     created_at: datetime
