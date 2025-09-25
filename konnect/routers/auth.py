@@ -1,13 +1,20 @@
 """Authentication router using Supabase"""
 
 import logging
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Form
 from fastapi.security import OAuth2PasswordRequestForm
 from supabase import AuthApiError, AuthInvalidCredentialsError
+from pydantic import BaseModel
 
 from ..supabase_client import supabase
 from ..schemas import UserCreate, Token
 from ..dependencies import get_current_user
+
+
+class LoginForm(BaseModel):
+    """Custom login form that explicitly uses email"""
+    email: str
+    password: str
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +76,7 @@ async def register_user(user: UserCreate):
 
 @router.post("/token", response_model=Token)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
-    """Login and get access token from Supabase"""
+    """Login and get access token from Supabase (OAuth2 compatible endpoint)"""
     if supabase is None:
         logger.error("Supabase client not configured for login")
         raise HTTPException(
@@ -78,27 +85,84 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
         )
 
     try:
-        logger.info(f"Attempting login for: {form_data.username}")
+        # Note: OAuth2PasswordRequestForm uses 'username' field but expects email value
+        email = form_data.username
+        logger.info(f"Attempting login for: {email}")
         response = supabase.auth.sign_in_with_password(
-            {"email": form_data.username, "password": form_data.password}
+            {"email": email, "password": form_data.password}
         )
 
         if response.session:
-            logger.info(f"Login successful for: {form_data.username}")
+            logger.info(f"Login successful for: {email}")
             return Token(
                 access_token=response.session.access_token,
                 refresh_token=response.session.refresh_token,
                 token_type="bearer",
             )
         else:
-            logger.warning(f"Login failed for: {form_data.username}")
+            logger.warning(f"Login failed for: {email}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Incorrect email or password",
                 headers={"WWW-Authenticate": "Bearer"},
             )
     except AuthInvalidCredentialsError:
-        logger.warning(f"Invalid credentials for: {form_data.username}")
+        logger.warning(f"Invalid credentials for: {email}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    except AuthApiError as e:
+        logger.error(f"Supabase auth API error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication failed",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    except Exception as e:
+        logger.error(f"Unexpected login error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error",
+        )
+
+
+@router.post("/login", response_model=Token)
+async def login_with_email(
+    email: str = Form(..., description="User email address"),
+    password: str = Form(..., description="User password")
+):
+    """Login with explicit email field (recommended endpoint)"""
+    if supabase is None:
+        logger.error("Supabase client not configured for login")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Supabase client not configured. Please check environment variables.",
+        )
+
+    try:
+        logger.info(f"Attempting login for: {email}")
+        response = supabase.auth.sign_in_with_password(
+            {"email": email, "password": password}
+        )
+
+        if response.session:
+            logger.info(f"Login successful for: {email}")
+            return Token(
+                access_token=response.session.access_token,
+                refresh_token=response.session.refresh_token,
+                token_type="bearer",
+            )
+        else:
+            logger.warning(f"Login failed for: {email}")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect email or password",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+    except AuthInvalidCredentialsError:
+        logger.warning(f"Invalid credentials for: {email}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password",
