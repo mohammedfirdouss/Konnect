@@ -34,6 +34,7 @@ app.dependency_overrides[get_db] = override_get_db
 # Create client with mocked Supabase
 client = TestClient(app)
 
+
 @pytest.fixture(autouse=True)
 def setup_database():
     """Reset database before each test"""

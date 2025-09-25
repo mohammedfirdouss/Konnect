@@ -29,6 +29,7 @@ else:
     supabase_admin: Client = None
     logger.warning("Supabase admin client not initialized - missing service role key")
 
+
 # Health check function
 def check_supabase_connection() -> dict:
     """Check Supabase connection status"""
@@ -39,14 +40,14 @@ def check_supabase_connection() -> dict:
         "anon_key_configured": anon_key is not None,
         "service_key_configured": service_role_key is not None,
     }
-    
+
     if supabase:
         try:
             # Test connection with a simple query
-            response = supabase.table('profiles').select('id').limit(1).execute()
+            supabase.table("profiles").select("id").limit(1).execute()
             status["connection_test"] = "success"
         except Exception as e:
             status["connection_test"] = f"failed: {str(e)}"
             logger.error(f"Supabase connection test failed: {e}")
-    
+
     return status

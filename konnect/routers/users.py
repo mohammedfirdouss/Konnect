@@ -1,7 +1,6 @@
 """Users router"""
 
 from datetime import datetime, timedelta
-from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
@@ -53,52 +52,63 @@ async def get_user_profile(current_user: dict = Depends(get_current_active_user)
     if not supabase:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Profile service not available"
+            detail="Profile service not available",
         )
-    
+
     try:
         # Get additional profile data from Supabase
-        response = supabase.table('profiles').select('*').eq('id', current_user["id"]).single().execute()
-        
+        response = (
+            supabase.table("profiles")
+            .select("*")
+            .eq("id", current_user["id"])
+            .single()
+            .execute()
+        )
+
         if response.data:
             return response.data
         else:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Profile not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found"
             )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to fetch profile: {str(e)}"
+            detail=f"Failed to fetch profile: {str(e)}",
         )
 
 
 @router.put("/me/profile")
 async def update_user_profile(
-    profile_update: dict,
-    current_user: dict = Depends(get_current_active_user)
+    profile_update: dict, current_user: dict = Depends(get_current_active_user)
 ):
     """Update user profile information"""
     if not supabase:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Profile service not available"
+            detail="Profile service not available",
         )
-    
+
     try:
         # Update profile in Supabase
-        response = supabase.table('profiles').update(profile_update).eq('id', current_user["id"]).execute()
-        
+        response = (
+            supabase.table("profiles")
+            .update(profile_update)
+            .eq("id", current_user["id"])
+            .execute()
+        )
+
         if response.data:
-            return {"message": "Profile updated successfully", "profile": response.data[0]}
+            return {
+                "message": "Profile updated successfully",
+                "profile": response.data[0],
+            }
         else:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Profile not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found"
             )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to update profile: {str(e)}"
+            detail=f"Failed to update profile: {str(e)}",
         )

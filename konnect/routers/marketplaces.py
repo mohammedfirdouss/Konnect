@@ -1,7 +1,6 @@
 """Marketplaces router for university marketplace management"""
 
 import logging
-from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
@@ -23,17 +22,23 @@ async def read_marketplaces(
     if not supabase:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Marketplace service not available"
+            detail="Marketplace service not available",
         )
 
     try:
-        response = supabase.table('marketplaces').select('*, profiles!marketplaces_created_by_fkey(username)').eq('is_active', True).range(skip, skip + limit - 1).execute()
+        response = (
+            supabase.table("marketplaces")
+            .select("*, profiles!marketplaces_created_by_fkey(username)")
+            .eq("is_active", True)
+            .range(skip, skip + limit - 1)
+            .execute()
+        )
         return response.data or []
     except Exception as e:
         logger.error(f"Error fetching marketplaces: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to fetch marketplaces: {str(e)}"
+            detail=f"Failed to fetch marketplaces: {str(e)}",
         )
 
 
@@ -43,12 +48,19 @@ async def read_marketplace(marketplace_id: int):
     if not supabase:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Marketplace service not available"
+            detail="Marketplace service not available",
         )
 
     try:
-        response = supabase.table('marketplaces').select('*, profiles!marketplaces_created_by_fkey(username)').eq('id', marketplace_id).eq('is_active', True).single().execute()
-        
+        response = (
+            supabase.table("marketplaces")
+            .select("*, profiles!marketplaces_created_by_fkey(username)")
+            .eq("id", marketplace_id)
+            .eq("is_active", True)
+            .single()
+            .execute()
+        )
+
         if response.data:
             return response.data
         else:
@@ -59,7 +71,7 @@ async def read_marketplace(marketplace_id: int):
         logger.error(f"Error fetching marketplace {marketplace_id}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to fetch marketplace: {str(e)}"
+            detail=f"Failed to fetch marketplace: {str(e)}",
         )
 
 
@@ -74,25 +86,37 @@ async def get_marketplace_products(
     if not supabase:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Marketplace service not available"
+            detail="Marketplace service not available",
         )
 
     try:
         # Verify marketplace exists
-        marketplace_response = supabase.table('marketplaces').select('*').eq('id', marketplace_id).eq('is_active', True).single().execute()
+        marketplace_response = (
+            supabase.table("marketplaces")
+            .select("*")
+            .eq("id", marketplace_id)
+            .eq("is_active", True)
+            .single()
+            .execute()
+        )
         if not marketplace_response.data:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Marketplace not found"
             )
 
         # Get listings for this marketplace
-        query = supabase.table('listings').select('*, profiles!listings_user_id_fkey(username)').eq('marketplace_id', marketplace_id).eq('is_active', True)
-        
+        query = (
+            supabase.table("listings")
+            .select("*, profiles!listings_user_id_fkey(username)")
+            .eq("marketplace_id", marketplace_id)
+            .eq("is_active", True)
+        )
+
         if category:
-            query = query.eq('category', category)
-            
+            query = query.eq("category", category)
+
         response = query.range(skip, skip + limit - 1).execute()
-        
+
         return {
             "marketplace": marketplace_response.data,
             "products": response.data or [],
@@ -102,7 +126,7 @@ async def get_marketplace_products(
         logger.error(f"Error fetching marketplace products: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to fetch marketplace products: {str(e)}"
+            detail=f"Failed to fetch marketplace products: {str(e)}",
         )
 
 
@@ -115,7 +139,7 @@ async def request_marketplace(
     if not supabase:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Marketplace service not available"
+            detail="Marketplace service not available",
         )
 
     try:
@@ -127,22 +151,22 @@ async def request_marketplace(
             "description": request.description,
             "requested_by": current_user["id"],
         }
-        
-        response = supabase.table('marketplace_requests').insert(request_data).execute()
-        
+
+        response = supabase.table("marketplace_requests").insert(request_data).execute()
+
         if response.data:
             logger.info(f"Marketplace request created: {response.data[0]['id']}")
             return response.data[0]
         else:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to create marketplace request"
+                detail="Failed to create marketplace request",
             )
     except Exception as e:
         logger.error(f"Error creating marketplace request: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to create marketplace request: {str(e)}"
+            detail=f"Failed to create marketplace request: {str(e)}",
         )
 
 
@@ -154,15 +178,21 @@ async def get_my_marketplace_requests(
     if not supabase:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Marketplace service not available"
+            detail="Marketplace service not available",
         )
 
     try:
-        response = supabase.table('marketplace_requests').select('*').eq('requested_by', current_user["id"]).order('created_at', desc=True).execute()
+        response = (
+            supabase.table("marketplace_requests")
+            .select("*")
+            .eq("requested_by", current_user["id"])
+            .order("created_at", desc=True)
+            .execute()
+        )
         return response.data or []
     except Exception as e:
         logger.error(f"Error fetching user marketplace requests: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to fetch marketplace requests: {str(e)}"
+            detail=f"Failed to fetch marketplace requests: {str(e)}",
         )

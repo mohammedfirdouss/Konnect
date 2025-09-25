@@ -1,7 +1,7 @@
 """Listings router for CRUD operations on marketplace listings"""
 
 import logging
-from typing import List, Optional
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
@@ -23,12 +23,18 @@ async def create_listing(
     if not supabase:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Listing service not available"
+            detail="Listing service not available",
         )
 
     try:
         # Verify the marketplace exists
-        marketplace_response = supabase.table('marketplaces').select('id').eq('id', listing.marketplace_id).single().execute()
+        marketplace_response = (
+            supabase.table("marketplaces")
+            .select("id")
+            .eq("id", listing.marketplace_id)
+            .single()
+            .execute()
+        )
         if not marketplace_response.data:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Marketplace not found"
@@ -43,22 +49,22 @@ async def create_listing(
             "marketplace_id": listing.marketplace_id,
             "user_id": current_user["id"],
         }
-        
-        response = supabase.table('listings').insert(listing_data).execute()
-        
+
+        response = supabase.table("listings").insert(listing_data).execute()
+
         if response.data:
             logger.info(f"Listing created: {response.data[0]['id']}")
             return response.data[0]
         else:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to create listing"
+                detail="Failed to create listing",
             )
     except Exception as e:
         logger.error(f"Error creating listing: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to create listing: {str(e)}"
+            detail=f"Failed to create listing: {str(e)}",
         )
 
 
@@ -75,25 +81,31 @@ async def read_listings(
     if not supabase:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Listing service not available"
+            detail="Listing service not available",
         )
 
     try:
-        query = supabase.table('listings').select('*, profiles!listings_user_id_fkey(username), marketplaces!listings_marketplace_id_fkey(name)').eq('is_active', True)
-        
+        query = (
+            supabase.table("listings")
+            .select(
+                "*, profiles!listings_user_id_fkey(username), marketplaces!listings_marketplace_id_fkey(name)"
+            )
+            .eq("is_active", True)
+        )
+
         if marketplace_id:
-            query = query.eq('marketplace_id', marketplace_id)
+            query = query.eq("marketplace_id", marketplace_id)
         if category:
-            query = query.eq('category', category)
-            
+            query = query.eq("category", category)
+
         response = query.range(skip, skip + limit - 1).execute()
-        
+
         return response.data or []
     except Exception as e:
         logger.error(f"Error fetching listings: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to fetch listings: {str(e)}"
+            detail=f"Failed to fetch listings: {str(e)}",
         )
 
 
@@ -103,12 +115,21 @@ async def read_listing(listing_id: int):
     if not supabase:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Listing service not available"
+            detail="Listing service not available",
         )
 
     try:
-        response = supabase.table('listings').select('*, profiles!listings_user_id_fkey(username, full_name), marketplaces!listings_marketplace_id_fkey(name)').eq('id', listing_id).eq('is_active', True).single().execute()
-        
+        response = (
+            supabase.table("listings")
+            .select(
+                "*, profiles!listings_user_id_fkey(username, full_name), marketplaces!listings_marketplace_id_fkey(name)"
+            )
+            .eq("id", listing_id)
+            .eq("is_active", True)
+            .single()
+            .execute()
+        )
+
         if response.data:
             return response.data
         else:
@@ -119,7 +140,7 @@ async def read_listing(listing_id: int):
         logger.error(f"Error fetching listing {listing_id}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to fetch listing: {str(e)}"
+            detail=f"Failed to fetch listing: {str(e)}",
         )
 
 
@@ -133,28 +154,34 @@ async def update_listing(
     if not supabase:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Listing service not available"
+            detail="Listing service not available",
         )
 
     try:
         # Update the listing (RLS will ensure only owner can update)
         update_data = listing_update.model_dump(exclude_unset=True)
-        
-        response = supabase.table('listings').update(update_data).eq('id', listing_id).eq('user_id', current_user["id"]).execute()
-        
+
+        response = (
+            supabase.table("listings")
+            .update(update_data)
+            .eq("id", listing_id)
+            .eq("user_id", current_user["id"])
+            .execute()
+        )
+
         if response.data:
             logger.info(f"Listing updated: {listing_id}")
             return response.data[0]
         else:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Listing not found or not authorized"
+                detail="Listing not found or not authorized",
             )
     except Exception as e:
         logger.error(f"Error updating listing {listing_id}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to update listing: {str(e)}"
+            detail=f"Failed to update listing: {str(e)}",
         )
 
 
@@ -167,23 +194,29 @@ async def delete_listing(
     if not supabase:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Listing service not available"
+            detail="Listing service not available",
         )
 
     try:
         # Soft delete the listing (set is_active to false)
-        response = supabase.table('listings').update({'is_active': False}).eq('id', listing_id).eq('user_id', current_user["id"]).execute()
-        
+        response = (
+            supabase.table("listings")
+            .update({"is_active": False})
+            .eq("id", listing_id)
+            .eq("user_id", current_user["id"])
+            .execute()
+        )
+
         if response.data:
             logger.info(f"Listing deleted: {listing_id}")
         else:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Listing not found or not authorized"
+                detail="Listing not found or not authorized",
             )
     except Exception as e:
         logger.error(f"Error deleting listing {listing_id}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to delete listing: {str(e)}"
+            detail=f"Failed to delete listing: {str(e)}",
         )

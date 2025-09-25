@@ -5,11 +5,8 @@ Main application module for Konnect
 import logging
 import os
 from contextlib import asynccontextmanager
+
 from dotenv import load_dotenv
-
-# Load environment variables from .env file
-load_dotenv()
-
 from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 from opentelemetry import metrics, trace
@@ -31,6 +28,9 @@ from .routers import (
     products,
     users,
 )
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Configure OpenTelemetry Metrics
 prometheus_reader = PrometheusMetricReader()
@@ -75,12 +75,14 @@ async def lifespan(app: FastAPI):
         # Check Supabase connection
         connection_status = check_supabase_connection()
         logger.info(f"Supabase connection status: {connection_status}")
-        
+
         if not connection_status["supabase_configured"]:
-            logger.warning("Supabase not properly configured - some features may not work")
+            logger.warning(
+                "Supabase not properly configured - some features may not work"
+            )
         else:
             logger.info("Supabase connection verified successfully")
-            
+
     except Exception as e:
         logger.error(f"Failed to verify Supabase connection: {e}")
         logger.warning("Continuing startup - some features may not work")
@@ -130,10 +132,10 @@ async def root():
 async def health_check():
     """Health check endpoint"""
     logger.info("Health check requested")
-    
+
     # Check Supabase connection
     supabase_status = check_supabase_connection()
-    
+
     health_status = {
         "status": "healthy" if supabase_status["supabase_configured"] else "degraded",
         "service": "konnect",
@@ -142,10 +144,12 @@ async def health_check():
         "supabase": supabase_status,
         "database": {
             "type": "supabase_postgresql",
-            "connected": supabase_status["connection_test"] == "success" if "connection_test" in supabase_status else False
-        }
+            "connected": supabase_status["connection_test"] == "success"
+            if "connection_test" in supabase_status
+            else False,
+        },
     }
-    
+
     return health_status
 
 
@@ -167,7 +171,7 @@ async def get_config():
             "ai_recommendations": True,
             "solana_payments": True,
             "real_time_messaging": True,
-        }
+        },
     }
 
 

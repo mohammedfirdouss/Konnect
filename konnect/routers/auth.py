@@ -21,9 +21,9 @@ async def register_user(user: UserCreate):
         logger.error("Supabase client not configured for registration")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Supabase client not configured. Please check environment variables."
+            detail="Supabase client not configured. Please check environment variables.",
         )
-    
+
     try:
         logger.info(f"Attempting to register user: {user.email}")
         response = supabase.auth.sign_up(
@@ -35,7 +35,7 @@ async def register_user(user: UserCreate):
                 },
             }
         )
-        
+
         if response.user:
             logger.info(f"User registered successfully: {response.user.id}")
             return {
@@ -45,7 +45,7 @@ async def register_user(user: UserCreate):
                     "email": response.user.email,
                     "username": response.user.user_metadata.get("username"),
                     "full_name": response.user.user_metadata.get("full_name"),
-                }
+                },
             }
         else:
             logger.warning(f"Registration failed for {user.email}")
@@ -57,13 +57,13 @@ async def register_user(user: UserCreate):
         logger.error(f"Supabase auth API error during registration: {e}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Registration failed - please check your information"
+            detail="Registration failed - please check your information",
         )
     except Exception as e:
         logger.error(f"Unexpected registration error: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
-            detail="Internal server error"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error",
         )
 
 
@@ -74,15 +74,15 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
         logger.error("Supabase client not configured for login")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Supabase client not configured. Please check environment variables."
+            detail="Supabase client not configured. Please check environment variables.",
         )
-    
+
     try:
         logger.info(f"Attempting login for: {form_data.username}")
         response = supabase.auth.sign_in_with_password(
             {"email": form_data.username, "password": form_data.password}
         )
-        
+
         if response.session:
             logger.info(f"Login successful for: {form_data.username}")
             return Token(
@@ -97,7 +97,7 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
                 detail="Incorrect email or password",
                 headers={"WWW-Authenticate": "Bearer"},
             )
-    except AuthInvalidCredentialsError as e:
+    except AuthInvalidCredentialsError:
         logger.warning(f"Invalid credentials for: {form_data.username}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -114,8 +114,8 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     except Exception as e:
         logger.error(f"Unexpected login error: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
-            detail="Internal server error"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error",
         )
 
 
@@ -129,17 +129,17 @@ async def get_current_user_info(current_user: dict = Depends(get_current_user)):
 async def auth_health_check():
     """Check authentication service health"""
     from ..supabase_client import check_supabase_connection
-    
+
     connection_status = check_supabase_connection()
-    
+
     if connection_status["supabase_configured"]:
         return {
             "status": "healthy",
             "service": "authentication",
-            "supabase_status": connection_status
+            "supabase_status": connection_status,
         }
     else:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Authentication service not properly configured"
+            detail="Authentication service not properly configured",
         )
