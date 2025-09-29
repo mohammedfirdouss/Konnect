@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useMutation } from '@tanstack/react-query';
+import { useFormik } from 'formik';
 import { 
   View, 
   Text, 
@@ -16,27 +18,61 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Camera, Image as ImageIcon, X } from 'lucide-react-native';
 import { router } from 'expo-router';
+import { createListing } from '@/api/listings';
+import { listingSchema } from '@/lib/schema';
+import Toast from 'react-native-toast-message';
+import { StorageService } from '@/services/StorageService';
+import { STORAGE_KEYS } from '@/constants/storageKeys';
 
 export default function AddListingScreen() {
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [price, setPrice] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [images, setImages] = useState<string[]>([]);
-  const [errors, setErrors] = useState<{[key: string]: string}>({});
 
-  const validateForm = () => {
-    const newErrors: {[key: string]: string} = {};
+  const { mutate: mutateCreateListing, isPending: isCreating } = useMutation({
+    mutationFn: createListing,
+    onSuccess: async (res) => {
+      Toast.show({
+        type: 'success',
+        text1: 'Listing created successfully!',
+        text2: 'Your item is now available in the marketplace.',
+      });
+      router.back();
+    },
+    onError: (err: any) => {
+      Toast.show({
+        type: 'error',
+        text1:
+          typeof err?.response?.data?.detail === 'string'
+            ? err?.response?.data?.detail
+            : 'Error creating listing',
+        text2: 'Please try again later.',
+      });
+    },
+  });
 
-    if (!title.trim()) newErrors.title = 'Title is required';
-    if (!description.trim()) newErrors.description = 'Description is required';
-    if (!price.trim()) newErrors.price = 'Price is required';
-    else if (isNaN(Number(price)) || Number(price) <= 0) newErrors.price = 'Invalid price';
-    if (!selectedCategory) newErrors.category = 'Category is required';
+  const { handleChange, values, errors, handleBlur, handleSubmit, setFieldValue } =
+    useFormik({
+      initialValues: {
+        title: 'Book 1',
+        description: 'something like a book',
+        price: '10',
+        category: 'Books',
+      },
+      validationSchema: listingSchema,
+      validateOnBlur: true,
+      onSubmit: async (values) => {
+        // Get marketplace_id from storage
+        const marketplaceId = await StorageService.getItem(STORAGE_KEYS.MARKETPLACE);
+        
+        mutateCreateListing({
+          title: values.title,
+          description: values.description,
+          price: Number(values.price),
+          category: values.category,
+          marketplace_id: marketplaceId ? Number(marketplaceId) : 1,
+        });
+      },
+    });
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
 
   const handleAddImage = () => {
     // Mock image picker
@@ -56,15 +92,6 @@ export default function AddListingScreen() {
     setImages(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = () => {
-    if (validateForm()) {
-      Alert.alert(
-        'Success',
-        'Listing created successfully!',
-        [{ text: 'OK', onPress: () => router.back() }]
-      );
-    }
-  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -77,29 +104,32 @@ export default function AddListingScreen() {
           <Input
             label="Title"
             placeholder="What are you selling?"
-            value={title}
-            onChangeText={setTitle}
+            value={values.title}
+            onChangeText={handleChange('title')}
             error={errors.title}
+            onBlur={handleBlur('title')}
           />
 
           <Input
             label="Description"
             placeholder="Describe your item or service..."
-            value={description}
-            onChangeText={setDescription}
+            value={values.description}
+            onChangeText={handleChange('description')}
             multiline
             numberOfLines={4}
             style={styles.textArea}
             error={errors.description}
+            onBlur={handleBlur('description')}
           />
 
           <Input
             label="Price (USD)"
             placeholder="0.00"
-            value={price}
-            onChangeText={setPrice}
+            value={values.price}
+            onChangeText={handleChange('price')}
             keyboardType="numeric"
             error={errors.price}
+            onBlur={handleBlur('price')}
           />
         </Card>
 
@@ -112,14 +142,14 @@ export default function AddListingScreen() {
                 key={category.id}
                 style={[
                   styles.categoryOption,
-                  selectedCategory === category.name && styles.categoryOptionSelected,
+                  values.category === category.name && styles.categoryOptionSelected,
                 ]}
-                onPress={() => setSelectedCategory(category.name)}
+                onPress={() => setFieldValue('category', category.name)}
               >
                 <Text style={styles.categoryIcon}>{category.icon}</Text>
                 <Text style={[
                   styles.categoryName,
-                  selectedCategory === category.name && styles.categoryNameSelected,
+                  values.category === category.name && styles.categoryNameSelected,
                 ]}>
                   {category.name}
                 </Text>
@@ -162,6 +192,7 @@ export default function AddListingScreen() {
             title="Create Listing"
             onPress={handleSubmit}
             style={styles.submitButton}
+            isLoading={isCreating}
           />
         </View>
       </ScrollView>

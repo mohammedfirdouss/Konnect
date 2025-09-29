@@ -13,38 +13,61 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { User, MapPin, Star, Package, Settings, Bell, CircleHelp as HelpCircle, LogOut, Shield, ChevronRight } from 'lucide-react-native';
 import { router } from 'expo-router';
+import { useQuery } from '@tanstack/react-query';
+import { fetchUser } from '@/api/auth';
+import { logOut } from '@/lib/helpers';
+import { useAuthorization } from '@/hooks/useAuthorization';
+import { AccountDetailFeature } from '@/components/account/AccountDetails';
+import { Section } from '@/components/Sections';
+import { SignInFeature } from '@/components/sign-in/SignInFeature';
 
 export default function ProfileScreen() {
+  const { selectedAccount } = useAuthorization();
+
+  const { data } = useQuery({
+    queryKey: ['user'],
+    queryFn: fetchUser,
+  });
+
+  console.log(data);
   const menuItems = [
-    { 
-      id: '1', 
-      title: 'Account Settings', 
-      icon: Settings, 
-      action: () => router.push('/settings') 
+    {
+      id: '1',
+      title: 'Account Settings',
+      icon: Settings,
+      action: () => {
+        return;
+      },
     },
-    { 
-      id: '2', 
-      title: 'Notifications', 
-      icon: Bell, 
-      action: () => router.push('/notifications') 
+    {
+      id: '2',
+      title: 'Notifications',
+      icon: Bell,
+      action: () => {
+        return;
+      },
     },
-    { 
-      id: '3', 
-      title: 'Order History', 
-      icon: Package, 
-      action: () => router.push('/orders') 
+    {
+      id: '3',
+      title: 'Order History',
+      icon: Package,
+      action: () => router.push('/orders'),
     },
-    { 
-      id: '4', 
-      title: 'Safety Center', 
-      icon: Shield, 
-      action: () => router.push('/safety') 
+    {
+      id: '4',
+      title: 'Safety Center',
+      icon: Shield,
+      action: () => {
+        return;
+      },
     },
-    { 
-      id: '5', 
-      title: 'Help & Support', 
-      icon: HelpCircle, 
-      action: () => router.push('/help') 
+    {
+      id: '5',
+      title: 'Help & Support',
+      icon: HelpCircle,
+      action: () => {
+        return;
+      },
     },
   ];
 
@@ -59,26 +82,34 @@ export default function ProfileScreen() {
         <View style={styles.content}>
           <Card style={styles.userCard}>
             <View style={styles.userInfo}>
-              <Image 
-                source={{ uri: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=1' }} 
-                style={styles.avatar} 
+              <Image
+                source={require('../../assets/images/coinhako.jpg')}
+                style={styles.avatar}
               />
               <View style={styles.userDetails}>
-                <Text style={styles.userName}>Alex Johnson</Text>
+                <Text style={styles.userName}>{data?.full_name}</Text>
                 <View style={styles.locationRow}>
-                  <MapPin color={theme.textMuted} size={14} />
-                  <Text style={styles.userLocation}>Stanford University</Text>
+                  {/* <MapPin color={theme.textMuted} size={14} /> */}
+                  <Text style={styles.userLocation}>{data?.username}</Text>
                 </View>
-                <View style={styles.ratingRow}>
+                {/* <View style={styles.ratingRow}>
                   <Star color={theme.warning} size={14} fill={theme.warning} />
                   <Text style={styles.userRating}>4.9 (23 reviews)</Text>
-                </View>
+                </View> */}
               </View>
               <TouchableOpacity style={styles.editButton}>
                 <User color={theme.primary} size={20} />
               </TouchableOpacity>
             </View>
           </Card>
+
+          {selectedAccount ? (
+            <>
+              <AccountDetailFeature />
+            </>
+          ) : (
+            <SignInFeature />
+          )}
 
           {/* Stats Cards */}
           <View style={styles.statsContainer}>
@@ -87,7 +118,7 @@ export default function ProfileScreen() {
               <Text style={styles.statLabel}>Orders</Text>
             </Card>
             <Card style={styles.statCard}>
-              <Text style={styles.statNumber}>$324</Text>
+              <Text style={styles.statNumber}>324 SOL</Text>
               <Text style={styles.statLabel}>Spent</Text>
             </Card>
             <Card style={styles.statCard}>
@@ -99,10 +130,12 @@ export default function ProfileScreen() {
           {/* Role Switch */}
           <Card style={styles.roleSwitchCard}>
             <Text style={styles.roleSwitchTitle}>Switch to Seller</Text>
-            <Text style={styles.roleSwitchSubtitle}>Start selling on campus today</Text>
-            <Button 
-              title="Become a Seller" 
-              onPress={() => router.push('/seller-onboarding')}
+            <Text style={styles.roleSwitchSubtitle}>
+              Start selling on campus today
+            </Text>
+            <Button
+              title="Become a Seller"
+              onPress={() => router.push('/(onboarding)/role-selection')}
               variant="secondary"
               style={styles.roleSwitchButton}
             />
@@ -111,11 +144,11 @@ export default function ProfileScreen() {
           {/* Menu Items */}
           <Card style={styles.menuCard}>
             {menuItems.map((item, index) => (
-              <TouchableOpacity 
-                key={item.id} 
+              <TouchableOpacity
+                key={item.id}
                 style={[
                   styles.menuItem,
-                  index < menuItems.length - 1 && styles.menuItemBorder
+                  index < menuItems.length - 1 && styles.menuItemBorder,
                 ]}
                 onPress={item.action}
               >
@@ -127,7 +160,12 @@ export default function ProfileScreen() {
           </Card>
 
           {/* Logout Button */}
-          <TouchableOpacity style={styles.logoutButton}>
+          <TouchableOpacity
+            style={styles.logoutButton}
+            onPress={() => {
+              logOut();
+            }}
+          >
             <LogOut color={theme.danger} size={20} />
             <Text style={styles.logoutText}>Sign Out</Text>
           </TouchableOpacity>
@@ -168,6 +206,7 @@ const styles = StyleSheet.create({
     height: 60,
     borderRadius: 30,
     marginRight: 16,
+    objectFit: 'cover',
   },
   userDetails: {
     flex: 1,

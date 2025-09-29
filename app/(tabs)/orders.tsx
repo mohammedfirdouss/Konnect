@@ -53,7 +53,7 @@ export default function OrdersScreen() {
           </Text>
         </View>
         <View style={styles.orderMeta}>
-          <Text style={styles.orderAmount}>${item.totalAmount}</Text>
+          <Text style={styles.orderAmount}>{item.totalAmount} SOL</Text>
           <Text
             style={{
               fontSize: 12,
@@ -116,11 +116,34 @@ export default function OrdersScreen() {
         </View>
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>No orders yet</Text>
-          <Text style={styles.emptySubtext}>Start shopping to see your orders here</Text>
-          <Button 
-            title="Browse Products" 
+          <Text style={styles.emptySubtext}>
+            Start shopping to see your orders here
+          </Text>
+          <Button
+            title="Browse Products"
             onPress={() => router.push('/search')}
             style={styles.browseButton}
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if ([].length === 0) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.title}>My Orders</Text>
+        </View>
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>No orders found</Text>
+          <Text style={styles.emptySubtext}>
+            Browse products to start shopping
+          </Text>
+          <Button
+            title="Explore Marketplace"
+            onPress={() => router.push('/search')}
+            // style={styles.}
           />
         </View>
       </SafeAreaView>

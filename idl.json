@@ -1,0 +1,835 @@
+{
+  "address": "B5nTWLtcbWiMpG26vTMBdVMZw3DL2ewsXZid1SDGBZNa",
+  "metadata": {
+    "name": "konnect",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Created with Anchor"
+  },
+  "instructions": [
+    {
+      "name": "buy_now",
+      "discriminator": [242, 42, 184, 77, 133, 152, 118, 204],
+      "accounts": [
+        {
+          "name": "listing",
+          "writable": true
+        },
+        {
+          "name": "marketplace",
+          "writable": true,
+          "relations": ["listing"]
+        },
+        {
+          "name": "buyer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "buyer_ata",
+          "writable": true
+        },
+        {
+          "name": "seller_ata",
+          "writable": true
+        },
+        {
+          "name": "treasury_ata",
+          "writable": true
+        },
+        {
+          "name": "mint",
+          "relations": ["listing"]
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": [
+        {
+          "name": "quantity",
+          "type": "u32"
+        },
+        {
+          "name": "reference",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "cancel_service_order",
+      "discriminator": [45, 9, 92, 49, 137, 82, 165, 90],
+      "accounts": [
+        {
+          "name": "escrow",
+          "writable": true
+        },
+        {
+          "name": "marketplace"
+        },
+        {
+          "name": "buyer",
+          "writable": true,
+          "signer": true,
+          "relations": ["escrow"]
+        },
+        {
+          "name": "buyer_ata",
+          "writable": true
+        },
+        {
+          "name": "vault",
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "create_listing",
+      "discriminator": [18, 168, 45, 24, 191, 31, 117, 54],
+      "accounts": [
+        {
+          "name": "marketplace",
+          "relations": ["merchant"]
+        },
+        {
+          "name": "merchant",
+          "writable": true
+        },
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true,
+          "relations": ["merchant"]
+        },
+        {
+          "name": "listing",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [108, 105, 115, 116, 105, 110, 103]
+              },
+              {
+                "kind": "account",
+                "path": "marketplace"
+              },
+              {
+                "kind": "account",
+                "path": "merchant"
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "price",
+          "type": "u64"
+        },
+        {
+          "name": "quantity",
+          "type": "u32"
+        },
+        {
+          "name": "is_service",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "create_service_order",
+      "discriminator": [68, 151, 172, 157, 90, 1, 232, 70],
+      "accounts": [
+        {
+          "name": "marketplace",
+          "relations": ["listing"]
+        },
+        {
+          "name": "listing",
+          "writable": true
+        },
+        {
+          "name": "buyer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "buyer_ata",
+          "writable": true
+        },
+        {
+          "name": "escrow",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [101, 115, 99, 114, 111, 119]
+              },
+              {
+                "kind": "account",
+                "path": "listing"
+              },
+              {
+                "kind": "account",
+                "path": "buyer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "escrow"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6, 221, 246, 225, 215, 101, 161, 147, 217, 203, 225, 70, 206,
+                  235, 121, 172, 28, 180, 133, 237, 95, 91, 55, 145, 58, 140,
+                  245, 133, 126, 255, 0, 169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140, 151, 37, 143, 78, 36, 137, 241, 187, 61, 16, 41, 20, 142,
+                13, 131, 11, 90, 19, 153, 218, 255, 16, 132, 4, 142, 123, 216,
+                219, 233, 248, 89
+              ]
+            }
+          }
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "reference",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "init_marketplace",
+      "discriminator": [242, 23, 212, 134, 238, 95, 82, 161],
+      "accounts": [
+        {
+          "name": "marketplace",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [109, 97, 114, 107, 101, 116, 112, 108, 97, 99, 101]
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "fee_bps",
+          "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "register_merchant",
+      "discriminator": [238, 245, 77, 132, 161, 88, 216, 248],
+      "accounts": [
+        {
+          "name": "marketplace",
+          "writable": true
+        },
+        {
+          "name": "merchant",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [109, 101, 114, 99, 104, 97, 110, 116]
+              },
+              {
+                "kind": "account",
+                "path": "marketplace"
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              }
+            ]
+          }
+        },
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "release_service_order",
+      "discriminator": [160, 33, 98, 120, 13, 105, 249, 205],
+      "accounts": [
+        {
+          "name": "escrow",
+          "writable": true
+        },
+        {
+          "name": "marketplace",
+          "relations": ["escrow"]
+        },
+        {
+          "name": "listing"
+        },
+        {
+          "name": "buyer",
+          "writable": true,
+          "signer": true,
+          "relations": ["escrow"]
+        },
+        {
+          "name": "seller_ata",
+          "writable": true
+        },
+        {
+          "name": "treasury_ata",
+          "writable": true
+        },
+        {
+          "name": "vault",
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "set_merchant_status",
+      "discriminator": [76, 172, 99, 200, 233, 226, 212, 102],
+      "accounts": [
+        {
+          "name": "merchant",
+          "writable": true
+        },
+        {
+          "name": "marketplace",
+          "relations": ["merchant"]
+        },
+        {
+          "name": "authority",
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "verified",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "update_listing",
+      "discriminator": [192, 174, 210, 68, 116, 40, 242, 253],
+      "accounts": [
+        {
+          "name": "listing",
+          "writable": true
+        },
+        {
+          "name": "seller",
+          "signer": true,
+          "relations": ["listing"]
+        }
+      ],
+      "args": [
+        {
+          "name": "new_price",
+          "type": {
+            "option": "u64"
+          }
+        },
+        {
+          "name": "new_quantity",
+          "type": {
+            "option": "u32"
+          }
+        },
+        {
+          "name": "active",
+          "type": {
+            "option": "bool"
+          }
+        }
+      ]
+    },
+    {
+      "name": "update_marketplace",
+      "discriminator": [72, 12, 22, 71, 86, 113, 79, 167],
+      "accounts": [
+        {
+          "name": "marketplace",
+          "writable": true
+        },
+        {
+          "name": "authority",
+          "signer": true,
+          "relations": ["marketplace"]
+        }
+      ],
+      "args": [
+        {
+          "name": "new_fee_bps",
+          "type": {
+            "option": "u16"
+          }
+        },
+        {
+          "name": "new_authority",
+          "type": {
+            "option": "pubkey"
+          }
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Escrow",
+      "discriminator": [31, 213, 123, 187, 186, 22, 218, 155]
+    },
+    {
+      "name": "Listing",
+      "discriminator": [218, 32, 50, 73, 43, 134, 26, 58]
+    },
+    {
+      "name": "Marketplace",
+      "discriminator": [70, 222, 41, 62, 78, 3, 32, 174]
+    },
+    {
+      "name": "Merchant",
+      "discriminator": [71, 235, 30, 40, 231, 21, 32, 64]
+    }
+  ],
+  "events": [
+    {
+      "name": "OrderCompleted",
+      "discriminator": [90, 77, 52, 248, 56, 233, 110, 197]
+    },
+    {
+      "name": "ServiceOrderCancelled",
+      "discriminator": [144, 186, 209, 141, 214, 85, 56, 120]
+    },
+    {
+      "name": "ServiceOrderCreated",
+      "discriminator": [62, 230, 63, 96, 3, 143, 203, 90]
+    },
+    {
+      "name": "ServiceOrderReleased",
+      "discriminator": [16, 205, 163, 82, 88, 114, 217, 83]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "FeeTooHigh",
+      "msg": "Fee too high (max 10%)"
+    },
+    {
+      "code": 6001,
+      "name": "InvalidAmount",
+      "msg": "Invalid amount"
+    },
+    {
+      "code": 6002,
+      "name": "InvalidQuantity",
+      "msg": "Invalid quantity"
+    },
+    {
+      "code": 6003,
+      "name": "ListingInactive",
+      "msg": "Listing is inactive"
+    },
+    {
+      "code": 6004,
+      "name": "WrongMarketplace",
+      "msg": "Wrong marketplace"
+    },
+    {
+      "code": 6005,
+      "name": "MathOverflow",
+      "msg": "Math overflow"
+    },
+    {
+      "code": 6006,
+      "name": "AlreadyReleased",
+      "msg": "Already released"
+    },
+    {
+      "code": 6007,
+      "name": "WrongFlowForGoods",
+      "msg": "Use service escrow flow"
+    },
+    {
+      "code": 6008,
+      "name": "WrongFlowForService",
+      "msg": "Use goods buy-now flow"
+    },
+    {
+      "code": 6009,
+      "name": "InvalidAccount",
+      "msg": "Invalid Account"
+    },
+    {
+      "code": 6010,
+      "name": "MissingReference",
+      "msg": "Missing Solana Pay reference in remaining_accounts"
+    },
+    {
+      "code": 6011,
+      "name": "WrongReference",
+      "msg": "Provided reference does not match remaining_accounts entry"
+    }
+  ],
+  "types": [
+    {
+      "name": "Escrow",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "marketplace",
+            "type": "pubkey"
+          },
+          {
+            "name": "listing",
+            "type": "pubkey"
+          },
+          {
+            "name": "seller",
+            "type": "pubkey"
+          },
+          {
+            "name": "buyer",
+            "type": "pubkey"
+          },
+          {
+            "name": "mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "reference",
+            "type": "pubkey"
+          },
+          {
+            "name": "released",
+            "type": "bool"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Listing",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "marketplace",
+            "type": "pubkey"
+          },
+          {
+            "name": "seller",
+            "type": "pubkey"
+          },
+          {
+            "name": "mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "price",
+            "type": "u64"
+          },
+          {
+            "name": "quantity",
+            "type": "u32"
+          },
+          {
+            "name": "is_service",
+            "type": "bool"
+          },
+          {
+            "name": "active",
+            "type": "bool"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Marketplace",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "fee_bps",
+            "type": "u16"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Merchant",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "marketplace",
+            "type": "pubkey"
+          },
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "verified",
+            "type": "bool"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "OrderCompleted",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "marketplace",
+            "type": "pubkey"
+          },
+          {
+            "name": "listing",
+            "type": "pubkey"
+          },
+          {
+            "name": "buyer",
+            "type": "pubkey"
+          },
+          {
+            "name": "seller",
+            "type": "pubkey"
+          },
+          {
+            "name": "mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "quantity",
+            "type": "u32"
+          },
+          {
+            "name": "total_amount",
+            "type": "u64"
+          },
+          {
+            "name": "reference",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ServiceOrderCancelled",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "marketplace",
+            "type": "pubkey"
+          },
+          {
+            "name": "escrow",
+            "type": "pubkey"
+          },
+          {
+            "name": "buyer",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "reference",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ServiceOrderCreated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "marketplace",
+            "type": "pubkey"
+          },
+          {
+            "name": "listing",
+            "type": "pubkey"
+          },
+          {
+            "name": "buyer",
+            "type": "pubkey"
+          },
+          {
+            "name": "seller",
+            "type": "pubkey"
+          },
+          {
+            "name": "mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "reference",
+            "type": "pubkey"
+          },
+          {
+            "name": "escrow",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ServiceOrderReleased",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "marketplace",
+            "type": "pubkey"
+          },
+          {
+            "name": "escrow",
+            "type": "pubkey"
+          },
+          {
+            "name": "buyer",
+            "type": "pubkey"
+          },
+          {
+            "name": "seller",
+            "type": "pubkey"
+          },
+          {
+            "name": "mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "reference",
+            "type": "pubkey"
+          }
+        ]
+      }
+    }
+  ]
+}

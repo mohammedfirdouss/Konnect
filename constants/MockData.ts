@@ -109,52 +109,64 @@ export const mockProducts: Product[] = [
   {
     id: '1',
     title: 'Calculus Textbook',
-    description: 'Stewart Calculus 8th Edition. Great condition, no highlighting.',
+    description:
+      'Stewart Calculus 8th Edition. Great condition, no highlighting.',
     price: 75,
     category: 'Books',
     seller: {
       id: 's1',
       name: 'Alex Chen',
-      avatar: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=1',
+      avatar:
+        'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=1',
       rating: 4.8,
       campus: 'Stanford University',
     },
-    images: ['https://images.pexels.com/photos/256520/pexels-photo-256520.jpeg?auto=compress&cs=tinysrgb&w=400'],
-    location: 'Tresidder Union',
+    images: [
+      'https://images.pexels.com/photos/256520/pexels-photo-256520.jpeg?auto=compress&cs=tinysrgb&w=400',
+    ],
+    location: 'Obafemi Hall',
     createdAt: new Date(),
   },
   {
     id: '2',
     title: 'MacBook Pro Repair',
-    description: 'Professional MacBook repair service. Screen replacement, battery, keyboard fixes.',
+    description:
+      'Professional MacBook repair service. Screen replacement, battery, keyboard fixes.',
     price: 120,
     category: 'Services',
     seller: {
       id: 's2',
       name: 'Tech Solutions Co',
-      avatar: 'https://images.pexels.com/photos/2182970/pexels-photo-2182970.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=1',
+      avatar:
+        'https://images.pexels.com/photos/2182970/pexels-photo-2182970.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=1',
       rating: 4.9,
-      campus: 'Stanford University',
+      campus: 'University of Ilorin',
     },
-    images: ['https://images.pexels.com/photos/18105/pexels-photo.jpg?auto=compress&cs=tinysrgb&w=400'],
+    images: [
+      'https://images.pexels.com/photos/18105/pexels-photo.jpg?auto=compress&cs=tinysrgb&w=400',
+    ],
     location: 'Engineering Quad',
     createdAt: new Date(),
   },
   {
     id: '3',
     title: 'Homemade Cookies',
-    description: 'Fresh baked chocolate chip cookies. Made daily in dorm kitchen.',
+    description:
+      'Fresh baked chocolate chip cookies. Made daily in dorm kitchen.',
     price: 8,
     category: 'Food',
     seller: {
       id: 's3',
       name: 'Sarah Kim',
-      avatar: 'https://images.pexels.com/photos/1674752/pexels-photo-1674752.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=1',
+      avatar:
+        'https://images.pexels.com/photos/1674752/pexels-photo-1674752.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=1',
       rating: 4.7,
-      campus: 'Stanford University',
+      campus: 'University of Lagos',
     },
-    images: ['https://images.pexels.com/photos/230325/pexels-photo-230325.jpeg?auto=compress&cs=tinysrgb&w=400'],
-    location: 'Wilbur Hall',
+    images: [
+      'https://images.pexels.com/photos/230325/pexels-photo-230325.jpeg?auto=compress&cs=tinysrgb&w=400',
+    ],
+    location: 'FSS',
     createdAt: new Date(),
   },
 ];

@@ -30,55 +30,68 @@ export default function OrderTrackingScreen() {
   const getStatusSteps = () => {
     const steps = [
       { id: 'pending', title: 'Order Placed', icon: Package, completed: true },
-      { id: 'confirmed', title: 'Order Confirmed', icon: CheckCircle, completed: order.status !== 'pending' },
-      { id: 'delivering', title: 'Out for Delivery', icon: Truck, completed: ['delivering', 'delivered'].includes(order.status) },
-      { id: 'delivered', title: 'Delivered', icon: CheckCircle, completed: order.status === 'delivered' },
+      // { id: 'confirmed', title: 'Order Confirmed', icon: CheckCircle, completed: order.status !== 'pending' },
+      {
+        id: 'delivering',
+        title: 'Out for Delivery',
+        icon: Truck,
+        completed: ['delivering', 'delivered'].includes(order.status),
+      },
+      {
+        id: 'delivered',
+        title: 'Delivered',
+        icon: CheckCircle,
+        completed: order.status === 'delivered',
+      },
     ];
     return steps;
   };
 
   const handleConfirmDelivery = () => {
-    Alert.alert(
-      'Confirm Delivery',
-      `Are you sure you want to confirm delivery? This will release ${order.escrowAmount} SOL from escrow to the seller.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Confirm', 
-          onPress: () => {
-            setOrder(prev => prev ? { ...prev, status: 'delivered', escrowStatus: 'released' } : null);
-            Alert.alert('Success', 'Delivery confirmed! Funds have been released to the seller.');
-          }
-        }
-      ]
-    );
+    // Alert.alert(
+    //   'Confirm Delivery',
+    //   `Are you sure you want to confirm delivery? This will release ${order.escrowAmount} SOL from escrow to the seller.`,
+    //   [
+    //     { text: 'Cancel', style: 'cancel' },
+    //     {
+    //       text: 'Confirm',
+    //       onPress: () => {
+    //         setOrder(prev => prev ? { ...prev, status: 'delivered', escrowStatus: 'released' } : null);
+    //         Alert.alert('Success', 'Delivery confirmed! Funds have been released to the seller.');
+    //       }
+    //     }
+    //   ]
+    // );
   };
 
   const handleDispute = () => {
-    Alert.alert(
-      'Dispute Order',
-      'This will start a dispute resolution process. Our team will review your case.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Start Dispute', 
-          style: 'destructive',
-          onPress: () => {
-            setOrder(prev => prev ? { ...prev, status: 'disputed', escrowStatus: 'disputed' } : null);
-            Alert.alert('Dispute Started', 'Your dispute has been submitted. We will contact you within 24 hours.');
-          }
-        }
-      ]
-    );
+    // Alert.alert(
+    //   'Dispute Order',
+    //   'This will start a dispute resolution process. Our team will review your case.',
+    //   [
+    //     { text: 'Cancel', style: 'cancel' },
+    //     {
+    //       text: 'Start Dispute',
+    //       style: 'destructive',
+    //       onPress: () => {
+    //         setOrder(prev => prev ? { ...prev, status: 'disputed', escrowStatus: 'disputed' } : null);
+    //         Alert.alert('Dispute Started', 'Your dispute has been submitted. We will contact you within 24 hours.');
+    //       }
+    //     }
+    //   ]
+    // );
   };
 
   const steps = getStatusSteps();
-  const currentStepIndex = steps.findIndex(step => step.id === order.status);
+  const currentStepIndex = steps.findIndex((step) => step.id === order.status);
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.backButton}
+        >
           <ArrowLeft color={theme.text} size={24} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Track Order</Text>
@@ -89,9 +102,11 @@ export default function OrderTrackingScreen() {
         {/* Order Info */}
         <Card style={styles.orderCard}>
           <Text style={styles.orderTitle}>{order.product.title}</Text>
-          <Text style={styles.orderSeller}>from {order.product.seller.name}</Text>
+          <Text style={styles.orderSeller}>
+            from {order.product.seller.name}
+          </Text>
           <View style={styles.orderMeta}>
-            <Text style={styles.orderAmount}>${order.totalAmount}</Text>
+            <Text style={styles.orderAmount}>{order.totalAmount} SOL</Text>
             <Text style={styles.trackingId}>#{order.trackingId}</Text>
           </View>
         </Card>
@@ -104,38 +119,46 @@ export default function OrderTrackingScreen() {
               const StepIcon = step.icon;
               const isActive = index === currentStepIndex;
               const isCompleted = step.completed;
-              
+
               return (
                 <View key={step.id} style={styles.stepContainer}>
                   <View style={styles.stepLeft}>
-                    <View style={[
-                      styles.stepIcon,
-                      isCompleted && styles.stepIconCompleted,
-                      isActive && styles.stepIconActive,
-                    ]}>
-                      <StepIcon 
-                        color={isCompleted ? theme.text : theme.textMuted} 
-                        size={20} 
+                    <View
+                      style={[
+                        styles.stepIcon,
+                        isCompleted && styles.stepIconCompleted,
+                        isActive && styles.stepIconActive,
+                      ]}
+                    >
+                      <StepIcon
+                        color={isCompleted ? theme.text : theme.textMuted}
+                        size={20}
                       />
                     </View>
                     {index < steps.length - 1 && (
-                      <View style={[
-                        styles.stepLine,
-                        isCompleted && styles.stepLineCompleted,
-                      ]} />
+                      <View
+                        style={[
+                          styles.stepLine,
+                          isCompleted && styles.stepLineCompleted,
+                        ]}
+                      />
                     )}
                   </View>
                   <View style={styles.stepContent}>
-                    <Text style={[
-                      styles.stepTitle,
-                      isCompleted && styles.stepTitleCompleted,
-                      isActive && styles.stepTitleActive,
-                    ]}>
+                    <Text
+                      style={[
+                        styles.stepTitle,
+                        isCompleted && styles.stepTitleCompleted,
+                        isActive && styles.stepTitleActive,
+                      ]}
+                    >
                       {step.title}
                     </Text>
                     {isActive && (
                       <Text style={styles.stepTime}>
-                        {order.status === 'delivering' ? 'Estimated delivery: 2-3 hours' : 'In progress...'}
+                        {order.status === 'delivering'
+                          ? 'Estimated delivery: 2-3 hours'
+                          : 'In progress...'}
                       </Text>
                     )}
                   </View>
@@ -153,18 +176,26 @@ export default function OrderTrackingScreen() {
           </View>
           <View style={styles.escrowInfo}>
             <Text style={styles.escrowAmount}>{order.escrowAmount} SOL</Text>
-            <Text style={[
-              styles.escrowStatus,
-              { color: order.escrowStatus === 'held' ? theme.warning : theme.success }
-            ]}>
-              {order.escrowStatus === 'held' ? '🔒 Funds Secured' : '✅ Released to Seller'}
+            <Text
+              style={[
+                styles.escrowStatus,
+                {
+                  color:
+                    order.escrowStatus === 'held'
+                      ? theme.warning
+                      : theme.success,
+                },
+              ]}
+            >
+              {order.escrowStatus === 'held'
+                ? '🔒 Funds Secured'
+                : '✅ Released to Seller'}
             </Text>
           </View>
           <Text style={styles.escrowDescription}>
-            {order.escrowStatus === 'held' 
+            {order.escrowStatus === 'held'
               ? 'Your payment is safely held in escrow until you confirm delivery.'
-              : 'Funds have been released to the seller after delivery confirmation.'
-            }
+              : 'Funds have been released to the seller after delivery confirmation.'}
           </Text>
           <Text style={styles.walletAddress}>
             Escrow Wallet: {order.escrowWallet}
@@ -178,7 +209,9 @@ export default function OrderTrackingScreen() {
             <Text style={styles.locationTitle}>Delivery Location</Text>
           </View>
           <Text style={styles.locationAddress}>{order.product.location}</Text>
-          <Text style={styles.locationCampus}>{order.product.seller.campus}</Text>
+          <Text style={styles.locationCampus}>
+            {order.product.seller.campus}
+          </Text>
         </Card>
 
         {/* Actions */}
@@ -201,9 +234,9 @@ export default function OrderTrackingScreen() {
         {order.status === 'delivering' && (
           <View style={styles.actionsContainer}>
             <Button
-              title="Contact Seller"
-              variant="outline"
-              onPress={() => Alert.alert('Feature Coming Soon', 'Direct messaging will be available soon!')}
+              title="Confirm Delivery"
+              variant="primary"
+              onPress={() => {}}
               style={styles.contactButton}
             />
           </View>

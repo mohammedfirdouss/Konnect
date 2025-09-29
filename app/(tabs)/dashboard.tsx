@@ -29,22 +29,22 @@ export default function DashboardScreen() {
         <View style={styles.statsGrid}>
           <Card style={styles.statCard}>
             <DollarSign color={theme.accent} size={24} />
-            <Text style={styles.statNumber}>${stats.totalRevenue}</Text>
+            <Text style={styles.statNumber}>{stats.totalRevenue} SOL</Text>
             <Text style={styles.statLabel}>Total Revenue</Text>
           </Card>
-          
+
           <Card style={styles.statCard}>
             <Package color={theme.primary} size={24} />
             <Text style={styles.statNumber}>{stats.totalSales}</Text>
             <Text style={styles.statLabel}>Total Sales</Text>
           </Card>
-          
+
           <Card style={styles.statCard}>
             <Eye color={theme.warning} size={24} />
             <Text style={styles.statNumber}>{stats.activeListings}</Text>
             <Text style={styles.statLabel}>Active Listings</Text>
           </Card>
-          
+
           <Card style={styles.statCard}>
             <Star color={theme.warning} size={24} fill={theme.warning} />
             <Text style={styles.statNumber}>{stats.rating}</Text>
@@ -56,16 +56,18 @@ export default function DashboardScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Quick Actions</Text>
           <View style={styles.actionsGrid}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.actionCard}
               onPress={() => router.push('/add-listing')}
             >
               <Plus color={theme.primary} size={32} />
               <Text style={styles.actionTitle}>Add Listing</Text>
-              <Text style={styles.actionSubtitle}>Create new product or service</Text>
+              <Text style={styles.actionSubtitle}>
+                Create new product or service
+              </Text>
             </TouchableOpacity>
-            
-            <TouchableOpacity 
+
+            <TouchableOpacity
               style={styles.actionCard}
               onPress={() => router.push('/listings')}
             >
@@ -89,17 +91,19 @@ export default function DashboardScreen() {
                 <Text style={styles.activityTime}>2 hours ago</Text>
               </View>
             </View>
-            
+
             <View style={styles.activityItem}>
               <View style={styles.activityIcon}>
                 <Eye color={theme.primary} size={16} />
               </View>
               <View style={styles.activityContent}>
-                <Text style={styles.activityTitle}>Calculus Textbook viewed 5 times</Text>
+                <Text style={styles.activityTitle}>
+                  Calculus Textbook viewed 5 times
+                </Text>
                 <Text style={styles.activityTime}>4 hours ago</Text>
               </View>
             </View>
-            
+
             <View style={styles.activityItem}>
               <View style={styles.activityIcon}>
                 <DollarSign color={theme.warning} size={16} />
@@ -118,7 +122,7 @@ export default function DashboardScreen() {
           <Card style={styles.performanceCard}>
             <View style={styles.performanceRow}>
               <Text style={styles.performanceLabel}>Revenue</Text>
-              <Text style={styles.performanceValue}>$324</Text>
+              <Text style={styles.performanceValue}>324 SOL</Text>
             </View>
             <View style={styles.performanceRow}>
               <Text style={styles.performanceLabel}>Orders</Text>

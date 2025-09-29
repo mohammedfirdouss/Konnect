@@ -1,28 +1,29 @@
-import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  SafeAreaView, 
-  TouchableOpacity, 
-  FlatList 
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  SafeAreaView,
+  TouchableOpacity,
+  FlatList,
 } from 'react-native';
 import { theme } from '@/constants/Colors';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { universities } from '@/constants/MockData';
 import { Search, ChevronRight } from 'lucide-react-native';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { StorageService } from '@/services/StorageService';
 import { STORAGE_KEYS } from '@/constants/storageKeys';
 import { useQuery } from '@tanstack/react-query';
-import { getAllMarketplaces, getMarketplaceProducts } from '@/api/marketplace';
+import { getAllMarketplaces } from '@/api/marketplace';
+import { MarketPlaceInterface } from '@/interface/marketplace';
 
 export default function UniversitySelectionScreen() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedUniversity, setSelectedUniversity] = useState<string | null>(
-    null
-  );
+  const [selectedUniversity, setSelectedUniversity] = useState<
+    string | number | null
+  >(null);
   const [showCustomInput, setShowCustomInput] = useState<boolean>(false);
 
   const filteredUniversities = universities.filter((uni) =>
@@ -38,38 +39,22 @@ export default function UniversitySelectionScreen() {
 
   const handleRequestNewCampus = () => {
     // Mock functionality - would normally send a request
-    setShowCustomInput(!showCustomInput);
+    // setShowCustomInput(!showCustomInput);
     // alert("Request submitted! We'll notify you when your campus is available.");
+
+    router.push('/(onboarding)/request-marketplace');
+
+    // router.push('/(onboarding)/auth');
   };
 
-  const { data } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['marketplaces'],
     queryFn: getAllMarketplaces,
   });
 
-  //   const handleCustomUniversityRequest = () => {
-  //   // if (!customUniversity.trim()) {
-  //   //   Alert.alert("Error", "Please enter your university name");
-  //   //   return;
-  //   // }
+  console.log('marketplace data', data);
 
-  // Alert.alert(
-  //   "Request Submitted",
-  //   `We'll create a marketplace for ${customUniversity} soon! You'll be notified when it's ready.`,
-  //   [
-  //     {
-  //       text: "OK",
-  //       onPress: () => {
-  //         // For now, continue with the custom university name
-  //         setSelectedUniversity(customUniversity);
-  //         handleContinue();
-  //       },
-  //     },
-  //   ]
-  // );
-  // };
-
-  const renderUniversity = ({ item }: { item: (typeof universities)[0] }) => (
+  const renderUniversity = ({ item }: { item: MarketPlaceInterface }) => (
     <TouchableOpacity
       style={[
         styles.universityCard,
@@ -82,7 +67,7 @@ export default function UniversitySelectionScreen() {
     >
       <View style={styles.universityInfo}>
         <Text style={styles.universityName}>{item.name}</Text>
-        <Text style={styles.universityLocation}>{item.location}</Text>
+        <Text style={styles.universityLocation}>{item.description}</Text>
       </View>
       <ChevronRight
         color={selectedUniversity === item.id ? theme.primary : theme.textMuted}
@@ -108,14 +93,17 @@ export default function UniversitySelectionScreen() {
           />
         </View>
 
-        <FlatList
-          data={filteredUniversities}
-          renderItem={renderUniversity}
-          keyExtractor={(item) => item.id}
-          style={styles.universitiesList}
-          showsVerticalScrollIndicator={false}
-        />
-
+        {isLoading ? (
+          <Text style={{ color: theme.text }}>Loading...</Text>
+        ) : (
+          <FlatList
+            data={data}
+            renderItem={renderUniversity}
+            keyExtractor={(item) => item?.id?.toString()}
+            style={styles.universitiesList}
+            showsVerticalScrollIndicator={false}
+          />
+        )}
         <View style={styles.footer}>
           <TouchableOpacity
             style={styles.requestButton}
@@ -132,7 +120,7 @@ export default function UniversitySelectionScreen() {
                 style={styles.searchInput}
                 placeholder="Enter your university name"
                 placeholderTextColor={theme.textSecondary}
-                value={selectedUniversity!}
+                value={selectedUniversity?.toString()}
                 onChangeText={setSelectedUniversity}
                 autoFocus
               />

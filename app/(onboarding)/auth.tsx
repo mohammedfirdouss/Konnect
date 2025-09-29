@@ -16,6 +16,9 @@ import { router } from 'expo-router';
 import KeyboardView from '@/components/ui/KeyboardView';
 import { loginRequest, registerRequest } from '@/api/auth';
 import { loginSchema, registerSchema } from '@/lib/schema';
+import Toast from 'react-native-toast-message';
+import { StorageService } from '@/services/StorageService';
+import { STORAGE_KEYS } from '@/constants/storageKeys';
 
 export default function AuthScreen() {
   const [isLogin, setIsLogin] = useState(true);
@@ -24,15 +27,65 @@ export default function AuthScreen() {
 
   const { mutate: mutateLogin, isPending: loginPending } = useMutation({
     mutationFn: loginRequest,
-    onSuccess: () => {
-      router.replace('/(tabs)');
+    onSuccess: async (res) => {
+      // Toast.show({
+      //   type: 'success',
+      //   text1: 'Login successful',
+      // });
+      StorageService.setItem(STORAGE_KEYS.ACCESS_TOKEN, res?.access_token);
+
+      const marketplaceId = await StorageService.getItem(
+        STORAGE_KEYS.MARKETPLACE
+      );
+
+      const user = await StorageService.getItem(STORAGE_KEYS.ROLE);
+      if (user === 'buyer') {
+        router.replace('/(tabs)');
+        return;
+      }
+
+      router.replace('/(tabs)/dashboard');
+
+      // if (marketplaceId) {
+      //   router.push('/(onboarding)/university-selection');
+      // } else {
+      //   router.replace('/(tabs)');
+      // }
+    },
+    onError: (err: any) => {
+      // console.log(err?.response?.data?.detail);
+      Toast.show({
+        type: 'error',
+        text1:
+          typeof err?.response?.data?.detail === 'string'
+            ? err?.response?.data?.detail
+            : 'Error logining user',
+        text2: '',
+      });
     },
   });
 
   const { mutate: mutateRegister, isPending: isRegistering } = useMutation({
     mutationFn: registerRequest,
-    onSuccess: () => {
-      router.replace('/(tabs)');
+    onSuccess: (res) => {
+      console.log('Auth', res);
+
+      Toast.show({
+        type: 'success',
+        text1: 'Registration successful',
+      });
+
+      setIsLogin(true);
+      // router.replace('/(tabs)');
+    },
+    onError: (err: any) => {
+      Toast.show({
+        type: 'error',
+        text1:
+          typeof err?.response?.data?.detail === 'string'
+            ? err?.response?.data?.detail
+            : 'Error registering user',
+      });
     },
   });
 
@@ -41,18 +94,31 @@ export default function AuthScreen() {
       initialValues: {
         email: '',
         password: '',
-        name: '',
+        username: '',
+        fullName: '',
         confirmPassword: '',
       },
       validationSchema: isLogin ? loginSchema : registerSchema,
-      validateOnChange: false,
       validateOnBlur: true,
-      onSubmit: (values) => {
+      onSubmit: async (values) => {
+        const user = await StorageService.getItem(STORAGE_KEYS.ROLE);
+        if (user === 'buyer') {
+          router.replace('/(tabs)');
+        } else {
+          router.replace('/(tabs)/dashboard');
+        }
+
         if (isLogin) {
           mutateLogin({ email: values.email, password: values.password });
           return;
         }
-        mutateRegister(values);
+
+        mutateRegister({
+          username: values.username,
+          full_name: values.fullName,
+          email: values.email,
+          password: values.password,
+        });
       },
     });
 
@@ -72,14 +138,24 @@ export default function AuthScreen() {
 
         <View style={styles.form}>
           {!isLogin && (
-            <Input
-              label="Full Name"
-              placeholder="Enter your name"
-              value={values.name}
-              onChangeText={handleChange('name')}
-              error={errors.name}
-              onBlur={handleBlur('name')}
-            />
+            <>
+              <Input
+                label="Username"
+                placeholder="Enter your username"
+                value={values.username}
+                onChangeText={handleChange('username')}
+                error={errors.username}
+                onBlur={handleBlur('username')}
+              />
+              <Input
+                label="Full Name"
+                placeholder="Enter your name"
+                value={values.fullName}
+                onChangeText={handleChange('fullName')}
+                error={errors.fullName}
+                onBlur={handleBlur('fullName')}
+              />
+            </>
           )}
 
           <Input

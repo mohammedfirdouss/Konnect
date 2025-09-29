@@ -14,28 +14,52 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Eye, CreditCard as Edit, Pause, Play, Trash2 } from 'lucide-react-native';
 import { router } from 'expo-router';
+import { useQuery } from '@tanstack/react-query';
+import { getListings } from '@/api/listings';
+import { StorageService } from '@/services/StorageService';
+import { STORAGE_KEYS } from '@/constants/storageKeys';
 
 export default function ListingsScreen() {
   const [listings, setListings] = useState(mockListings);
+  const [skip, setSkip] = useState(0);
+  const [limit, setLimit] = useState(100);
+  const [marketplaceId, setMarketplaceId] = useState('');
+  const [category, setCategory] = useState('');
 
   const toggleListingStatus = (id: string) => {
-    setListings(prev => prev.map(listing => 
-      listing.id === id 
-        ? { ...listing, status: listing.status === 'active' ? 'paused' : 'active' }
-        : listing
-    ));
+    setListings((prev) =>
+      prev.map((listing) =>
+        listing.id === id
+          ? {
+              ...listing,
+              status: listing.status === 'active' ? 'paused' : 'active',
+            }
+          : listing
+      )
+    );
   };
 
   const deleteListing = (id: string) => {
-    setListings(prev => prev.filter(listing => listing.id !== id));
+    setListings((prev) => prev.filter((listing) => listing.id !== id));
   };
+
+  const { data: listedProducts } = useQuery({
+    queryKey: ['listed-products', skip, limit],
+    queryFn: () => getListings({ skip, limit, category }),
+  });
+
+  console.log(listedProducts);
 
   const getStatusColor = (status: Listing['status']) => {
     switch (status) {
-      case 'active': return theme.accent;
-      case 'paused': return theme.warning;
-      case 'sold': return theme.textMuted;
-      default: return theme.textMuted;
+      case 'active':
+        return theme.accent;
+      case 'paused':
+        return theme.warning;
+      case 'sold':
+        return theme.textMuted;
+      default:
+        return theme.textMuted;
     }
   };
 
@@ -46,10 +70,15 @@ export default function ListingsScreen() {
         <View style={styles.listingInfo}>
           <Text style={styles.listingTitle}>{item.title}</Text>
           <Text style={styles.listingCategory}>{item.category}</Text>
-          <Text style={styles.listingPrice}>${item.price}</Text>
+          <Text style={styles.listingPrice}>{item.price} SOL</Text>
         </View>
         <View style={styles.listingMeta}>
-          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
+          <View
+            style={[
+              styles.statusBadge,
+              { backgroundColor: getStatusColor(item.status) },
+            ]}
+          >
             <Text style={styles.statusText}>{item.status}</Text>
           </View>
           <View style={styles.viewsContainer}>
@@ -60,14 +89,15 @@ export default function ListingsScreen() {
       </View>
 
       <View style={styles.listingActions}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.actionButton}
-          onPress={() => router.push(`/edit-listing/${item.id}`)}
+          onPress={() => router.push(`/add-listing`)}
+          // onPress={() => router.push(`/add-listing/${item.id}`)}
         >
           <Edit color={theme.primary} size={16} />
         </TouchableOpacity>
-        
-        <TouchableOpacity 
+
+        <TouchableOpacity
           style={styles.actionButton}
           onPress={() => toggleListingStatus(item.id)}
         >
@@ -77,8 +107,8 @@ export default function ListingsScreen() {
             <Play color={theme.accent} size={16} />
           )}
         </TouchableOpacity>
-        
-        <TouchableOpacity 
+
+        <TouchableOpacity
           style={styles.actionButton}
           onPress={() => deleteListing(item.id)}
         >
@@ -99,12 +129,14 @@ export default function ListingsScreen() {
         />
       </View>
 
-      {listings.length === 0 ? (
+      {listedProducts?.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>No listings yet</Text>
-          <Text style={styles.emptySubtext}>Create your first listing to start selling</Text>
-          <Button 
-            title="Add Listing" 
+          <Text style={styles.emptySubtext}>
+            Create your first listing to start selling
+          </Text>
+          <Button
+            title="Add Listing"
             onPress={() => router.push('/add-listing')}
             style={styles.addButton}
           />

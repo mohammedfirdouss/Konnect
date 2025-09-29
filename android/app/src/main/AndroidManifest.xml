@@ -27,7 +27,6 @@
         <category android:name="android.intent.category.DEFAULT"/>
         <category android:name="android.intent.category.BROWSABLE"/>
         <data android:scheme="myapp"/>
-        <data android:scheme="com.nelsonelaye.konnect"/>
         <data android:scheme="exp+konnect"/>
       </intent-filter>
     </activity>

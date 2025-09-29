@@ -1,12 +1,32 @@
 import { Tabs } from 'expo-router';
 import { Chrome as Home, Search, ShoppingCart, Package, User, ChartBar as BarChart3, List, Plus } from 'lucide-react-native';
 import { theme } from '@/constants/Colors';
-import { useContext } from 'react';
+import { useContext, useEffect, useState } from 'react';
+import { StorageService } from '@/services/StorageService';
+import { STORAGE_KEYS } from '@/constants/storageKeys';
 // import { UserContext } from '@/contexts/UserContext';
-
 export default function TabLayout() {
-  // This would normally come from context, but we'll mock it for now
-  const userRole = 'buyer' as 'buyer' | 'seller'; // or 'seller'
+  const [role, setRole] = useState('buyer');
+  const [roleLoaded, setRoleLoaded] = useState(false);
+
+  const handleUserRole = async () => {
+    try {
+      const user = await StorageService.getItem(STORAGE_KEYS.ROLE);
+      setRole(user || 'buyer');
+    } catch (error) {
+      console.error('Error loading user role:', error);
+    } finally {
+      setRoleLoaded(true);
+    }
+  };
+
+  useEffect(() => {
+    handleUserRole();
+  }, []);
+
+  if (!roleLoaded) {
+    return null;
+  }
 
   return (
     <Tabs
@@ -34,7 +54,7 @@ export default function TabLayout() {
         options={{
           title: 'Home',
           tabBarIcon: ({ color, size }) => <Home color={color} size={size} />,
-          href: userRole === 'buyer' ? '/' : null,
+          href: role === 'buyer' ? '/' : null,
         }}
       />
       <Tabs.Screen
@@ -42,7 +62,7 @@ export default function TabLayout() {
         options={{
           title: 'Search',
           tabBarIcon: ({ color, size }) => <Search color={color} size={size} />,
-          href: userRole === 'buyer' ? '/search' : null,
+          href: role === 'buyer' ? '/search' : null,
         }}
       />
       <Tabs.Screen
@@ -52,7 +72,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => (
             <ShoppingCart color={color} size={size} />
           ),
-          href: userRole === 'buyer' ? '/cart' : null,
+          href: role === 'buyer' ? '/cart' : null,
         }}
       />
 
@@ -64,7 +84,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => (
             <BarChart3 color={color} size={size} />
           ),
-          href: userRole === 'seller' ? '/dashboard' : null, // Hide for buyers
+          href: role === 'seller' ? '/dashboard' : null, // Hide for buyers
         }}
       />
       <Tabs.Screen
@@ -72,7 +92,7 @@ export default function TabLayout() {
         options={{
           title: 'Listings',
           tabBarIcon: ({ color, size }) => <List color={color} size={size} />,
-          href: userRole === 'seller' ? '/listings' : null,
+          href: role === 'seller' ? '/listings' : null,
         }}
       />
       <Tabs.Screen
@@ -80,7 +100,7 @@ export default function TabLayout() {
         options={{
           title: 'Add',
           tabBarIcon: ({ color, size }) => <Plus color={color} size={size} />,
-          href: userRole === 'seller' ? '/add-listing' : null,
+          href: role === 'seller' ? '/add-listing' : null,
         }}
       />
 
@@ -101,6 +121,13 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => <User color={color} size={size} />,
         }}
       />
+    {/* <Tabs.Screen
+        name="product"
+        options={{
+          href: null, // Hide from tab bar
+        }}
+    
+      /> */}
     </Tabs>
   );
 }

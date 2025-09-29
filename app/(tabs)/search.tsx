@@ -13,31 +13,47 @@ import { ProductCard } from '@/components/ProductCard';
 import { Input } from '@/components/ui/Input';
 import { router } from 'expo-router';
 import { Filter } from 'lucide-react-native';
+import { useQuery } from '@tanstack/react-query';
+import { getMarketplaceProducts } from '@/api/marketplace';
+import { MarketPlaceProductInterface } from '@/interface/marketplace';
 
 export default function SearchScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
-  const filteredProducts = mockProducts.filter(product => {
-    const matchesSearch = product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         product.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = !selectedCategory || product.category === selectedCategory;
-    return matchesSearch && matchesCategory;
+  const { data: marketPlaceProducts, isLoading } = useQuery({
+    queryKey: ['marketplace-products'],
+    queryFn: getMarketplaceProducts,
   });
 
-  const renderCategory = ({ item }: { item: typeof categories[0] }) => (
-    <TouchableOpacity 
+  const filteredProducts = marketPlaceProducts?.products?.filter(
+    (product: MarketPlaceProductInterface) => {
+      const matchesSearch =
+        product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        product.description.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory =
+        !selectedCategory || product.category === selectedCategory;
+      return matchesSearch && matchesCategory;
+    }
+  );
+
+  const renderCategory = ({ item }: { item: (typeof categories)[0] }) => (
+    <TouchableOpacity
       style={[
         styles.filterChip,
-        selectedCategory === item.name && styles.filterChipActive
+        selectedCategory === item.name && styles.filterChipActive,
       ]}
-      onPress={() => setSelectedCategory(selectedCategory === item.name ? null : item.name)}
+      onPress={() =>
+        setSelectedCategory(selectedCategory === item.name ? null : item.name)
+      }
     >
       <Text style={styles.filterChipIcon}>{item.icon}</Text>
-      <Text style={[
-        styles.filterChipText,
-        selectedCategory === item.name && styles.filterChipTextActive
-      ]}>
+      <Text
+        style={[
+          styles.filterChipText,
+          selectedCategory === item.name && styles.filterChipTextActive,
+        ]}
+      >
         {item.name}
       </Text>
     </TouchableOpacity>
@@ -76,18 +92,23 @@ export default function SearchScreen() {
         <Text style={styles.resultsCount}>
           {filteredProducts.length} results found
         </Text>
-        <FlatList
-          data={filteredProducts}
-          renderItem={({ item }) => (
-            <ProductCard
-              product={item}
-              onPress={() => router.push(`/product/${item.id}`)}
-            />
-          )}
-          keyExtractor={(item) => item.id}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.productsList}
-        />
+
+        {isLoading ? (
+          <Text style={{ color: theme.text }}>Loading...</Text>
+        ) : (
+          <FlatList
+            data={filteredProducts}
+            renderItem={({ item }) => (
+              <ProductCard
+                product={item}
+                onPress={() => router.push(`/product/${item.id}`)}
+              />
+            )}
+            keyExtractor={(item) => item.id}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.productsList}
+          />
+        )}
       </View>
     </SafeAreaView>
   );

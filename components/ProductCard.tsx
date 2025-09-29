@@ -1,27 +1,40 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { Card } from './ui/Card';
-import { Product } from '@/constants/MockData';
+import { MarketPlaceProductInterface } from '@/interface/marketplace';
 import { theme } from '@/constants/Colors';
+import { useQuery } from '@tanstack/react-query';
+import { getListingImages } from '@/api/listings';
 
 interface ProductCardProps {
-  product: Product;
+  product: MarketPlaceProductInterface;
   onPress: () => void;
   style?: any;
 }
 
 export function ProductCard({ product, onPress, style }: ProductCardProps) {
+  // const { data: productImages } = useQuery({
+  //   queryKey: ['product-images', product.id],
+  //   queryFn: () => getListingImages(product.id.toString()),
+  // });
+
+  // console.log('productImages', productImages);
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
-      <Card style={[styles.container, style]}>
-        <Image source={{ uri: product.images[0] }} style={styles.image} />
+      <Card style={{ ...styles.container, ...style }}>
+        <Image
+          source={{
+            uri: 'https://images.pexels.com/photos/18105/pexels-photo.jpg?auto=compress&cs=tinysrgb&w=400',
+          }}
+          style={styles.image}
+        />
         <View style={styles.content}>
           <Text style={styles.title} numberOfLines={2}>
             {product.title}
           </Text>
           <Text style={styles.category}>{product.category}</Text>
           <View style={styles.footer}>
-            <Text style={styles.price}>${product.price}</Text>
+            <Text style={styles.price}>{product.price} SOL</Text>
             {/* <View style={styles.seller}>
               <Image
                 source={{ uri: product.seller.avatar }}

@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  SafeAreaView, 
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  SafeAreaView,
   ScrollView,
   TouchableOpacity,
-  Alert 
+  Alert,
 } from 'react-native';
 import { theme } from '@/constants/Colors';
 import { Card } from '@/components/ui/Card';
@@ -14,33 +14,124 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { ArrowLeft, Shield, Wallet, CreditCard } from 'lucide-react-native';
 import { router } from 'expo-router';
+import { useSmartContract } from '@/hooks/useSmartContract';
+import { orderProduct } from '@/api/order';
+import { useMutation } from '@tanstack/react-query';
+import { StorageService } from '@/services/StorageService';
+import { STORAGE_KEYS } from '@/constants/storageKeys';
+import { CartItem } from '@/interface/orders';
+import Toast from 'react-native-toast-message';
+import { useAuthorization } from '@/hooks/useAuthorization';
+import { useMobileWallet } from '@/hooks/useMobileWallet';
 
 export default function CheckoutScreen() {
-  const [paymentMethod, setPaymentMethod] = useState<'solana' | 'card'>('solana');
+  const [paymentMethod, setPaymentMethod] = useState<'solana' | 'card'>(
+    'solana'
+  );
   const [walletAddress, setWalletAddress] = useState('');
   const [deliveryAddress, setDeliveryAddress] = useState('');
   const [notes, setNotes] = useState('');
 
+  const { selectedAccount } = useAuthorization();
+  const { connect } = useMobileWallet();
+
   // Mock order data
   const orderTotal = 75;
-  const solPrice = 35.50; // Mock SOL price in USD
-  const solAmount = (orderTotal / solPrice).toFixed(4);
+  const solPrice = 210; // Mock SOL price in USD
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const platformFee = 0.02;
 
-  const handlePlaceOrder = () => {
+  // const program = useSmartContract();
+
+  const productsFee = useMemo(() => {
+    return cartItems.reduce(
+      (sum, item) => sum + item.product.price * item.quantity,
+      0
+    );
+  }, [cartItems]);
+
+  const totalSol = useMemo(() => {
+    return productsFee + platformFee;
+  }, [productsFee, platformFee]);
+
+  const solUSD = Number((totalSol * solPrice).toFixed(2)).toLocaleString(
+    'en-US'
+  );
+
+  const { mutateAsync: mutateOrderProduct, isPending } = useMutation({
+    mutationFn: orderProduct,
+    // onSuccess: () => {},
+    // onError: () => {},
+  });
+
+  const handlePlaceOrder = async () => {
+    // try {
+    //   await Promise.all(
+    //     cartItems.map((item) =>
+    //       mutateOrderProduct({
+    //         listing_id: Number(item.product.id),
+    //         quantity: item.quantity,
+    //         delivery_address: deliveryAddress,
+    //         notes,
+    //       })
+    //     )
+    //   );
+
+    //   await StorageService.removeItem(STORAGE_KEYS.CART);
+
+    //   Toast.show({
+    //     type: 'success',
+    //     text1: 'Order Placed!',
+    //     text2: 'Your order has been placed successfully.',
+    //   });
+    // } catch (err: any) {
+    //   console.log('err', err?.response?.data?.detail);
+    //   Toast.show({
+    //     type: 'error',
+    //     text1: 'Error',
+    //     text2: err?.response?.data?.detail,
+    //   });
+    // }
     Alert.alert(
       'Order Placed!',
-      `Your order has been placed successfully. Payment of ${solAmount} SOL is now held in escrow.`,
+      `Your order has been placed successfully. Payment of ${totalSol} SOL is now held in escrow.`,
       [
-        { text: 'Track Order', onPress: () => router.push('/order-tracking/1') },
-        { text: 'OK', onPress: () => router.push('/(tabs)') }
+        {
+          text: 'Track Order',
+          onPress: () => router.push('/order-tracking/1'),
+        },
+        { text: 'OK', onPress: () => router.push('/(tabs)') },
       ]
     );
+  };
+
+  const fetchCartItems = async () => {
+    const stored = await StorageService.getItem(STORAGE_KEYS.CART);
+    setCartItems(stored ?? []);
+  };
+
+  useEffect(() => {
+    fetchCartItems();
+  }, [fetchCartItems]);
+
+  const handleCreateOrder = async () => {
+    // if (!program) return;
+    // const tx = await program.methods
+    //   .createServiceOrder("ref-key-123")
+    //   .accounts({
+    //     // fill contract accounts here
+    //   })
+    //   .rpc();
+    // console.log("✅ Service order created:", tx);
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.backButton}
+        >
           <ArrowLeft color={theme.text} size={24} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Checkout</Text>
@@ -52,23 +143,23 @@ export default function CheckoutScreen() {
         <Card style={styles.summaryCard}>
           <Text style={styles.sectionTitle}>Order Summary</Text>
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Calculus Textbook</Text>
-            <Text style={styles.summaryValue}>$75.00</Text>
+            <Text style={styles.summaryLabel}>Product(s) totalSol</Text>
+            <Text style={styles.summaryValue}>{productsFee} SOL</Text>
           </View>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Platform Fee</Text>
-            <Text style={styles.summaryValue}>$0.00</Text>
+            <Text style={styles.summaryValue}>{platformFee} SOL</Text>
           </View>
           <View style={[styles.summaryRow, styles.totalRow]}>
             <Text style={styles.totalLabel}>Total</Text>
-            <Text style={styles.totalValue}>${orderTotal}</Text>
+            <Text style={styles.totalValue}>{totalSol} SOL</Text>
           </View>
         </Card>
 
         {/* Payment Method */}
         <Card style={styles.paymentCard}>
           <Text style={styles.sectionTitle}>Payment Method</Text>
-          
+
           <TouchableOpacity
             style={[
               styles.paymentOption,
@@ -76,22 +167,31 @@ export default function CheckoutScreen() {
             ]}
             onPress={() => setPaymentMethod('solana')}
           >
-            <Wallet color={paymentMethod === 'solana' ? theme.primary : theme.textMuted} size={24} />
+            <Wallet
+              color={
+                paymentMethod === 'solana' ? theme.primary : theme.textMuted
+              }
+              size={24}
+            />
             <View style={styles.paymentInfo}>
-              <Text style={[
-                styles.paymentTitle,
-                paymentMethod === 'solana' && styles.paymentTitleSelected,
-              ]}>
+              <Text
+                style={[
+                  styles.paymentTitle,
+                  paymentMethod === 'solana' && styles.paymentTitleSelected,
+                ]}
+              >
                 Solana Wallet
               </Text>
               <Text style={styles.paymentSubtitle}>
-                Pay with SOL ({solAmount} SOL ≈ ${orderTotal})
+                Pay with SOL ({totalSol} SOL)
               </Text>
             </View>
-            <View style={[
-              styles.radioButton,
-              paymentMethod === 'solana' && styles.radioButtonSelected,
-            ]} />
+            <View
+              style={[
+                styles.radioButton,
+                paymentMethod === 'solana' && styles.radioButtonSelected,
+              ]}
+            />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -101,22 +201,29 @@ export default function CheckoutScreen() {
             ]}
             onPress={() => setPaymentMethod('card')}
           >
-            <CreditCard color={paymentMethod === 'card' ? theme.primary : theme.textMuted} size={24} />
+            <CreditCard
+              color={paymentMethod === 'card' ? theme.primary : theme.textMuted}
+              size={24}
+            />
             <View style={styles.paymentInfo}>
-              <Text style={[
-                styles.paymentTitle,
-                paymentMethod === 'card' && styles.paymentTitleSelected,
-              ]}>
+              <Text
+                style={[
+                  styles.paymentTitle,
+                  paymentMethod === 'card' && styles.paymentTitleSelected,
+                ]}
+              >
                 Credit Card
               </Text>
               <Text style={styles.paymentSubtitle}>
-                Traditional payment (converted to SOL)
+                Traditional payment (${solUSD})
               </Text>
             </View>
-            <View style={[
-              styles.radioButton,
-              paymentMethod === 'card' && styles.radioButtonSelected,
-            ]} />
+            <View
+              style={[
+                styles.radioButton,
+                paymentMethod === 'card' && styles.radioButtonSelected,
+              ]}
+            />
           </TouchableOpacity>
         </Card>
 
@@ -126,15 +233,19 @@ export default function CheckoutScreen() {
             <Text style={styles.sectionTitle}>Connect Wallet</Text>
             <Input
               placeholder="Enter your Solana wallet address"
-              value={walletAddress}
-              onChangeText={setWalletAddress}
+              value={selectedAccount?.address}
+              // onChangeText={setWalletAddress}
+              // disabled={selectedAccount?.address}
             />
-            <Button
-              title="Connect Phantom Wallet"
-              variant="outline"
-              onPress={() => setWalletAddress('7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU')}
-              style={styles.connectButton}
-            />
+
+            {!selectedAccount?.address && (
+              <Button
+                title="Connect Phantom Wallet"
+                variant="outline"
+                onPress={() => connect()}
+                style={styles.connectButton}
+              />
+            )}
           </Card>
         )}
 
@@ -142,8 +253,8 @@ export default function CheckoutScreen() {
         <Card style={styles.deliveryCard}>
           <Text style={styles.sectionTitle}>Delivery Information</Text>
           <Input
-            label="Campus Location"
-            placeholder="e.g., Tresidder Union, Room 201"
+            label="Delivery Address"
+            placeholder="e.g., New hall, Room 201"
             value={deliveryAddress}
             onChangeText={setDeliveryAddress}
           />
@@ -164,8 +275,9 @@ export default function CheckoutScreen() {
             <Text style={styles.escrowTitle}>Escrow Protection</Text>
           </View>
           <Text style={styles.escrowDescription}>
-            Your payment of {solAmount} SOL will be held securely in a Solana smart contract. 
-            Funds are only released to the seller after you confirm delivery.
+            Your payment of {totalSol} SOL will be held securely in a Solana
+            smart contract. Funds are only released to the seller after you
+            confirm delivery.
           </Text>
           <View style={styles.escrowSteps}>
             <Text style={styles.escrowStep}>1. Payment locked in escrow</Text>
@@ -179,9 +291,13 @@ export default function CheckoutScreen() {
       {/* Place Order Button */}
       <View style={styles.footer}>
         <Button
-          title={`Place Order (${solAmount} SOL)`}
+          title={`Place Order (${totalSol} SOL)`}
           onPress={handlePlaceOrder}
           style={styles.placeOrderButton}
+          disabled={
+            deliveryAddress === '' || isPending || !selectedAccount?.address
+          }
+          isLoading={isPending}
         />
       </View>
     </SafeAreaView>

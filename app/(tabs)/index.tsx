@@ -1,19 +1,46 @@
-import React from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ScrollView, 
-  TouchableOpacity, 
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
   FlatList,
-  SafeAreaView 
+  SafeAreaView,
 } from 'react-native';
 import { theme } from '@/constants/Colors';
 import { categories, mockProducts } from '@/constants/MockData';
 import { ProductCard } from '@/components/ProductCard';
 import { router } from 'expo-router';
+import { useQuery } from '@tanstack/react-query';
+import { fetchRecommendations } from '@/api/user';
+import { StorageService } from '@/services/StorageService';
+import { STORAGE_KEYS } from '@/constants/storageKeys';
+import { getMarketplaceProducts } from '@/api/marketplace';
+import { fetchAIRecommendations } from '@/api/ai';
+import WalletButton from '@/components/WalletButton';
+import { useAuthorization } from '@/hooks/useAuthorization';
+import { AccountDetailFeature } from '@/components/account/AccountDetails';
+import { Section } from '@/components/Sections';
+import { SignInFeature } from '@/components/sign-in/SignInFeature';
+import { MarketPlaceProductInterface } from '@/interface/marketplace';
+import { TopBar } from '@/components/top-bar/TopBar';
 
-export default function HomeScreen() {
+const HomeScreen = () => {
+  const { selectedAccount } = useAuthorization();
+
+  // const { data: recommededProducts } = useQuery({
+  //   queryKey: ['ai-recommedations'],
+  //   queryFn: fetchAIRecommendations,
+  // });
+
+  const { data: marketPlaceProducts, isLoading } = useQuery({
+    queryKey: ['marketplace-products'],
+    queryFn: getMarketplaceProducts,
+  });
+
+  console.log('marketPlaceProducts', marketPlaceProducts);
+
   const renderCategory = ({ item }: { item: (typeof categories)[0] }) => (
     <TouchableOpacity
       style={styles.categoryCard}
@@ -27,6 +54,8 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
+        <TopBar />
+
         {/* Header */}
         <View style={styles.header}>
           <View>
@@ -34,6 +63,11 @@ export default function HomeScreen() {
             <Text style={styles.subtitle}>
               Find everything you need on campus
             </Text>
+
+            {/* <WalletButton
+              selectedAccount={selectedAccount}
+              openMenu={() => {}}
+            /> */}
           </View>
         </View>
 
@@ -56,20 +90,36 @@ export default function HomeScreen() {
             <Text style={styles.sectionTitle}>✨ Recommended for you</Text>
             <Text style={styles.aiLabel}>AI Powered</Text>
           </View>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.recommendationsGrid}
-          >
-            {mockProducts.slice(0, 4).map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                onPress={() => router.push(`/product/${product.id}`)}
-                style={styles.recommendationCard}
-              />
-            ))}
-          </ScrollView>
+
+          {/* {recommededProducts?.recommedations?.length > 0 ? ( */}
+          {marketPlaceProducts?.products?.length > 0 ? (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.recommendationsGrid}
+            >
+              {marketPlaceProducts?.products
+                ?.slice(0, 4)
+                .map((product: MarketPlaceProductInterface) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    onPress={() => router.replace(`/product/${product.id}`)}
+                    style={styles.recommendationCard}
+                  />
+                ))}
+            </ScrollView>
+          ) : (
+            <View>
+              <Text
+                style={{
+                  color: 'white',
+                }}
+              >
+                No recommeded products. Keep browsing
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Recent Listings */}
@@ -77,21 +127,29 @@ export default function HomeScreen() {
           <Text style={styles.sectionTitle}>Recent Listings</Text>
           <ScrollView showsVerticalScrollIndicator={false}>
             <View style={styles.listingsGrid}>
-              {mockProducts.map((product, idx) => (
-                <View style={styles.listingCard} key={product.id}>
-                  <ProductCard
-                    product={product}
-                    onPress={() => router.push(`/product/${product.id}`)}
-                  />
-                </View>
-              ))}
+              {isLoading ? (
+                <Text style={{ color: theme.text }}>Loading...</Text>
+              ) : (
+                marketPlaceProducts?.products?.map(
+                  (product: MarketPlaceProductInterface) => (
+                    <View style={styles.listingCard} key={product.id}>
+                      <ProductCard
+                        product={product}
+                        onPress={() => router.push(`/product/${product.id}`)}
+                      />
+                    </View>
+                  )
+                )
+              )}
             </View>
           </ScrollView>
         </View>
       </ScrollView>
     </SafeAreaView>
   );
-}
+};
+
+export default HomeScreen;
 
 const styles = StyleSheet.create({
   container: {
@@ -121,7 +179,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    // marginBottom: 16,
   },
   sectionTitle: {
     fontSize: 20,

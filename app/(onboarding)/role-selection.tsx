@@ -4,12 +4,18 @@ import { theme } from '@/constants/Colors';
 import { Button } from '@/components/ui/Button';
 import { ShoppingBag, Store } from 'lucide-react-native';
 import { router } from 'expo-router';
+import { StorageService } from '@/services/StorageService';
+import { STORAGE_KEYS } from '@/constants/storageKeys';
 
 export default function RoleSelectionScreen() {
-  const [selectedRole, setSelectedRole] = useState<'buyer' | 'seller' | null>(null);
+  const [selectedRole, setSelectedRole] = useState<'buyer' | 'seller' | null>(
+    null
+  );
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
+    console.log('selectedRole', selectedRole);
     if (selectedRole) {
+      await StorageService.setItem(STORAGE_KEYS.ROLE, selectedRole);
       router.push('/(onboarding)/university-selection');
     }
   };
@@ -28,14 +34,19 @@ export default function RoleSelectionScreen() {
             ]}
             onPress={() => setSelectedRole('buyer')}
           >
-            <ShoppingBag 
-              color={selectedRole === 'buyer' ? theme.primary : theme.textMuted} 
-              size={48} 
+            <ShoppingBag
+              color={
+                // selectedRole === 'buyer' ? theme.primary : theme.textMuted
+                theme.textMuted
+              }
+              size={48}
             />
-            <Text style={[
-              styles.optionTitle,
-              selectedRole === 'buyer' && styles.optionTitleSelected,
-            ]}>
+            <Text
+              style={[
+                styles.optionTitle,
+                // selectedRole === 'buyer' && styles.optionTitleSelected,
+              ]}
+            >
               I want to buy
             </Text>
             <Text style={styles.optionDescription}>
@@ -50,14 +61,19 @@ export default function RoleSelectionScreen() {
             ]}
             onPress={() => setSelectedRole('seller')}
           >
-            <Store 
-              color={selectedRole === 'seller' ? theme.primary : theme.textMuted} 
-              size={48} 
+            <Store
+              color={
+                theme.textMuted
+                // selectedRole === 'seller' ? theme.primary : theme.textMuted
+              }
+              size={48}
             />
-            <Text style={[
-              styles.optionTitle,
-              selectedRole === 'seller' && styles.optionTitleSelected,
-            ]}>
+            <Text
+              style={[
+                styles.optionTitle,
+                // selectedRole === 'seller' && styles.optionTitleSelected,
+              ]}
+            >
               I want to sell
             </Text>
             <Text style={styles.optionDescription}>

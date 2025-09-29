@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  SafeAreaView, 
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  SafeAreaView,
   FlatList,
   Image,
-  TouchableOpacity 
+  TouchableOpacity,
 } from 'react-native';
 import { theme } from '@/constants/Colors';
 import { mockProducts } from '@/constants/MockData';
@@ -14,56 +14,92 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Trash2, Plus, Minus } from 'lucide-react-native';
 import { router } from 'expo-router';
-
-interface CartItem {
-  id: string;
-  product: typeof mockProducts[0];
-  quantity: number;
-}
+import { StorageService } from '@/services/StorageService';
+import { STORAGE_KEYS } from '@/constants/storageKeys';
+import { ProductInterface } from '@/interface/marketplace';
+import { CartItem } from '@/interface/orders';
 
 export default function CartScreen() {
-  const [cartItems, setCartItems] = useState<CartItem[]>([
-    { id: '1', product: mockProducts[0], quantity: 1 },
-    { id: '2', product: mockProducts[2], quantity: 2 },
-  ]);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
 
   const updateQuantity = (id: string, change: number) => {
-    setCartItems(items => 
-      items.map(item => 
-        item.id === id 
+    setCartItems((items) =>
+      items.map((item) =>
+        item.id === id
           ? { ...item, quantity: Math.max(1, item.quantity + change) }
           : item
       )
     );
   };
 
-  const removeItem = (id: string) => {
-    setCartItems(items => items.filter(item => item.id !== id));
+  const removeItem = async (id: string) => {
+    // setCartItems(items => items.filter(item => item.id !== id));
+
+    try {
+      // Get current cart items
+      const existingCartItems = await StorageService.getItem<CartItem[]>(
+        STORAGE_KEYS.CART
+      );
+      const cartItems: CartItem[] = existingCartItems ?? [];
+
+      const updatedCart = cartItems.filter((item) => item.id !== id);
+
+      await StorageService.setItem(STORAGE_KEYS.CART, updatedCart);
+
+      setCartItems(updatedCart);
+
+      console.log(`Item ${id} removed from cart`);
+    } catch (error) {
+      console.error('Error removing item from cart:', error);
+    }
   };
 
-  const total = cartItems.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
+  const total = cartItems.reduce(
+    (sum, item) => sum + item.product.price * item.quantity,
+    0
+  );
+
+  const fetchCartItems = async () => {
+    const stored = await StorageService.getItem<CartItem[]>(STORAGE_KEYS.CART);
+    // console.log('cartItems', stored);
+    setCartItems(stored ?? []);
+  };
+
+  useEffect(() => {
+    fetchCartItems();
+  }, [fetchCartItems]);
 
   const renderCartItem = ({ item }: { item: CartItem }) => (
     <Card style={styles.cartItem}>
-      <Image source={{ uri: item.product.images[0] }} style={styles.productImage} />
+      <Image
+        source={{
+          uri: 'https://images.pexels.com/photos/18105/pexels-photo.jpg?auto=compress&cs=tinysrgb&w=400',
+        }}
+        style={styles.productImage}
+      />
       <View style={styles.itemDetails}>
-        <Text style={styles.productTitle}>{item.product.title}</Text>
-        <Text style={styles.productPrice}>${item.product.price}</Text>
-        <Text style={styles.sellerName}>{item.product.seller.name}</Text>
+        <Text style={styles.productTitle}>{item.product?.title}</Text>
+        <Text style={styles.productPrice}>{item.product?.price} SOL</Text>
+        <Text style={styles.sellerName}>
+          {item.product?.profiles?.full_name}
+        </Text>
       </View>
       <View style={styles.itemControls}>
-        <TouchableOpacity onPress={() => removeItem(item.id)} style={styles.removeButton}>
+        <TouchableOpacity
+          onPress={() => removeItem(item.id)}
+          style={styles.removeButton}
+        >
           <Trash2 color={theme.danger} size={16} />
         </TouchableOpacity>
         <View style={styles.quantityControls}>
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => updateQuantity(item.id, -1)}
             style={styles.quantityButton}
           >
             <Minus color={theme.text} size={16} />
           </TouchableOpacity>
           <Text style={styles.quantity}>{item.quantity}</Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => updateQuantity(item.id, 1)}
             style={styles.quantityButton}
           >
@@ -82,9 +118,11 @@ export default function CartScreen() {
         </View>
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>Your cart is empty</Text>
-          <Text style={styles.emptySubtext}>Browse products to start shopping</Text>
-          <Button 
-            title="Explore Marketplace" 
+          <Text style={styles.emptySubtext}>
+            Browse products to start shopping
+          </Text>
+          <Button
+            title="Explore Marketplace"
             onPress={() => router.push('/search')}
             style={styles.exploreButton}
           />
@@ -103,7 +141,7 @@ export default function CartScreen() {
       <FlatList
         data={cartItems}
         renderItem={renderCartItem}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item, i) => item.id + i}
         contentContainerStyle={styles.cartList}
         showsVerticalScrollIndicator={false}
       />
@@ -112,10 +150,10 @@ export default function CartScreen() {
         <Card style={styles.totalCard}>
           <View style={styles.totalRow}>
             <Text style={styles.totalLabel}>Total:</Text>
-            <Text style={styles.totalAmount}>${total.toFixed(2)}</Text>
+            <Text style={styles.totalAmount}>{total.toFixed(2)} SOL</Text>
           </View>
-          <Button 
-            title="Proceed to Checkout" 
+          <Button
+            title="Proceed to Checkout"
             onPress={() => router.push('/checkout')}
             style={styles.checkoutButton}
           />
