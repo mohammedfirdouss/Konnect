@@ -196,6 +196,7 @@ export default function CheckoutScreen() {
 
           <TouchableOpacity
             style={[
+              { display: 'none' },
               styles.paymentOption,
               paymentMethod === 'card' && styles.paymentOptionSelected,
             ]}

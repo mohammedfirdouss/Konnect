@@ -32,6 +32,7 @@ export default function AuthScreen() {
       //   type: 'success',
       //   text1: 'Login successful',
       // });
+
       StorageService.setItem(STORAGE_KEYS.ACCESS_TOKEN, res?.access_token);
 
       const marketplaceId = await StorageService.getItem(
@@ -100,13 +101,14 @@ export default function AuthScreen() {
       },
       validationSchema: isLogin ? loginSchema : registerSchema,
       validateOnBlur: true,
-      onSubmit: async (values) => {
-        const user = await StorageService.getItem(STORAGE_KEYS.ROLE);
-        if (user === 'buyer') {
-          router.replace('/(tabs)');
-        } else {
-          router.replace('/(tabs)/dashboard');
-        }
+      onSubmit: (values) => {
+        // const user = await StorageService.getItem(STORAGE_KEYS.ROLE);
+        // if (user === 'buyer') {
+        //   router.replace('/(tabs)');
+        // } else {
+        //   router.replace('/(tabs)/dashboard');
+        // }
+        // console.log('values', values);
 
         if (isLogin) {
           mutateLogin({ email: values.email, password: values.password });
