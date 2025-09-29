@@ -329,7 +329,7 @@ class AIRecommendation(BaseModel):
 class AIRecommendationsResponse(BaseModel):
     """AI recommendations response"""
 
-    user_id: int
+    user_id: UUID
     recommendations: List[AIRecommendation] = []
     generated_at: datetime
 
