@@ -5,8 +5,6 @@ import { StatusBar } from 'expo-status-bar';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Toast from 'react-native-toast-message';
-// import '@solana/wallet-adapter-react-ui/styles.css';
-// import { SolanaProvider } from '@/components/SolanaProvider';
 import { ClusterProvider } from '@/components/cluster/cluster-data-access';
 import { ConnectionProvider } from '@/components/ConnectionProvider';
 import {

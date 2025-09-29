@@ -9,20 +9,12 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { theme } from '@/constants/Colors';
-import { categories, mockProducts } from '@/constants/MockData';
+import { categories } from '@/constants/MockData';
 import { ProductCard } from '@/components/ProductCard';
 import { router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
-import { fetchRecommendations } from '@/api/user';
-import { StorageService } from '@/services/StorageService';
-import { STORAGE_KEYS } from '@/constants/storageKeys';
 import { getMarketplaceProducts } from '@/api/marketplace';
-import { fetchAIRecommendations } from '@/api/ai';
-import WalletButton from '@/components/WalletButton';
 import { useAuthorization } from '@/hooks/useAuthorization';
-import { AccountDetailFeature } from '@/components/account/AccountDetails';
-import { Section } from '@/components/Sections';
-import { SignInFeature } from '@/components/sign-in/SignInFeature';
 import { MarketPlaceProductInterface } from '@/interface/marketplace';
 import { TopBar } from '@/components/top-bar/TopBar';
 
@@ -63,11 +55,6 @@ const HomeScreen = () => {
             <Text style={styles.subtitle}>
               Find everything you need on campus
             </Text>
-
-            {/* <WalletButton
-              selectedAccount={selectedAccount}
-              openMenu={() => {}}
-            /> */}
           </View>
         </View>
 
