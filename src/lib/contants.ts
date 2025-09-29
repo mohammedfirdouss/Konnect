@@ -1,0 +1,1 @@
+export const APK_URL = "https://expo.dev/artifacts/eas/8x4DXYxcynfiCkmukAabwe.apk"

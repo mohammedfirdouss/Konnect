@@ -2,6 +2,7 @@ import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import Image from "next/image";
 import Link from "next/link";
+import { APK_URL } from "@/lib/contants";
 
 const Hero = () => {
   const features = [
@@ -36,7 +37,7 @@ const Hero = () => {
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
-          <Link href="https://expo.dev/artifacts/eas/pDxxvqBdUqHFaukiqPiSH5.apk">
+          <Link href={APK_URL}>
             <Button
               size="sm"
               className="w-fit mx-auto !text-sm"

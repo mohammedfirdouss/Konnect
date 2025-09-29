@@ -1,4 +1,5 @@
 import Button from "@/components/ui/Button";
+import { APK_URL } from "@/lib/contants";
 import Link from "next/link";
 
 const Footer = () => {
@@ -13,7 +14,7 @@ const Footer = () => {
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Link href="https://expo.dev/artifacts/eas/pDxxvqBdUqHFaukiqPiSH5.apk">
+          <Link href={APK_URL}>
             <Button size="lg" variant="konnect">
               Download App
             </Button>

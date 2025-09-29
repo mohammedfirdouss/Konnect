@@ -1,4 +1,5 @@
 import Button from "@/components/ui/Button";
+import { APK_URL } from "@/lib/contants";
 import Link from "next/link";
 
 const Header = () => {
@@ -19,7 +20,7 @@ const Header = () => {
               Docs
             </a>
           </nav>
-          <Link href="https://expo.dev/artifacts/eas/pDxxvqBdUqHFaukiqPiSH5.apk">
+          <Link href={APK_URL}>
             <Button variant="konnect" size="lg">
               Download App
             </Button>
