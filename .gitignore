@@ -37,4 +37,5 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
-build-1758715302865.apk
+.apk
+build-*.apk
