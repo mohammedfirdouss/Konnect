@@ -17,14 +17,15 @@ import { getMarketplaceProducts } from '@/api/marketplace';
 import { useAuthorization } from '@/hooks/useAuthorization';
 import { MarketPlaceProductInterface } from '@/interface/marketplace';
 import { TopBar } from '@/components/top-bar/TopBar';
+import { fetchAIRecommendations } from '@/api/ai';
 
 const HomeScreen = () => {
   const { selectedAccount } = useAuthorization();
 
-  // const { data: recommededProducts } = useQuery({
-  //   queryKey: ['ai-recommedations'],
-  //   queryFn: fetchAIRecommendations,
-  // });
+  const { data: recommededProducts } = useQuery({
+    queryKey: ['ai-recommedations'],
+    queryFn: fetchAIRecommendations,
+  });
 
   const { data: marketPlaceProducts, isLoading } = useQuery({
     queryKey: ['marketplace-products'],
@@ -79,13 +80,13 @@ const HomeScreen = () => {
           </View>
 
           {/* {recommededProducts?.recommedations?.length > 0 ? ( */}
-          {marketPlaceProducts?.products?.length > 0 ? (
+          {recommededProducts?.products?.length > 0 ? (
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.recommendationsGrid}
             >
-              {marketPlaceProducts?.products
+              {recommededProducts?.products
                 ?.slice(0, 4)
                 .map((product: MarketPlaceProductInterface) => (
                   <ProductCard

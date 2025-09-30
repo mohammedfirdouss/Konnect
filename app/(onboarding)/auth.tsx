@@ -43,9 +43,9 @@ export default function AuthScreen() {
       if (user === 'buyer') {
         router.replace('/(tabs)');
         return;
+      } else {
+        router.replace('/(tabs)/dashboard');
       }
-
-      router.replace('/(tabs)/dashboard');
 
       // if (marketplaceId) {
       //   router.push('/(onboarding)/university-selection');
@@ -76,6 +76,8 @@ export default function AuthScreen() {
         text1: 'Registration successful',
       });
 
+      resetForm();
+
       setIsLogin(true);
       // router.replace('/(tabs)');
     },
@@ -101,7 +103,7 @@ export default function AuthScreen() {
       },
       validationSchema: isLogin ? loginSchema : registerSchema,
       validateOnBlur: true,
-      onSubmit: (values) => {
+      onSubmit: async (values) => {
         // const user = await StorageService.getItem(STORAGE_KEYS.ROLE);
         // if (user === 'buyer') {
         //   router.replace('/(tabs)');
@@ -111,7 +113,7 @@ export default function AuthScreen() {
         // console.log('values', values);
 
         if (isLogin) {
-          mutateLogin({ email: values.email, password: values.password });
+          mutateLogin({ username: values.email, password: values.password });
           return;
         }
 
