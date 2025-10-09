@@ -83,7 +83,7 @@ python -m pytest tests/test_recommendations.py -v
 The system includes a mock recommendation agent that simulates the Google ADK integration. In production:
 
 1. The agent analyzes user behavior and preferences
-2. Generates personalized listing recommendations  
+2. Generates personalized listing recommendations
 3. Returns a list of listing IDs sorted by relevance
 4. Results are cached in Redis for fast API responses
 

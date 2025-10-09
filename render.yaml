@@ -1,0 +1,74 @@
+services:
+  - type: web
+    name: konnect
+    env: python
+    buildCommand: "pip install --upgrade pip && pip install -r requirements.txt"
+    startCommand: "uvicorn konnect.main:app --host 0.0.0.0 --port $PORT"
+    healthCheckPath: /health
+    plan: starter
+    region: oregon
+    envVars:
+      # Application Configuration
+      - key: SECRET_KEY
+        generateValue: true
+      - key: PYTHONPATH
+        value: /opt/render/project/src
+      - key: ENVIRONMENT
+        value: production
+      - key: LOG_LEVEL
+        value: INFO
+      - key: REDIS_EXPIRE_TIME
+        value: 3600
+        
+      # Database Configuration (using existing Render PostgreSQL)
+      - key: DATABASE_URL
+        fromDatabase:
+          name: konnect-db
+          property: connectionString
+          
+      # Redis Configuration (optional for caching)
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: konnect-redis
+          property: connectionString
+      - key: CELERY_BROKER_URL
+        fromService:
+          type: redis
+          name: konnect-redis
+          property: connectionString
+      - key: CELERY_RESULT_BACKEND
+        fromService:
+          type: redis
+          name: konnect-redis
+          property: connectionString
+          
+      # Supabase Configuration - MUST be set in Render Dashboard
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+        
+      # Optional: Google ADK for AI features
+      - key: GOOGLE_APPLICATION_CREDENTIALS
+        sync: false
+      - key: GOOGLE_API_KEY
+        sync: false
+
+  # Redis service for caching and background tasks
+  - type: redis
+    name: konnect-redis
+    plan: starter
+    region: oregon
+    maxmemoryPolicy: allkeys-lru
+
+# PostgreSQL database
+databases:
+  - name: konnect-db
+    databaseName: konnect
+    user: konnect
+    plan: starter
+    region: oregon
+    version: "15"

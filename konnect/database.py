@@ -1,21 +1,21 @@
 """Database configuration and session management"""
 
 import os
-from typing import Generator
+from collections.abc import Generator
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session, declarative_base
+from sqlalchemy.orm import Session, declarative_base, sessionmaker
 
 # Database URL configuration
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "sqlite:///./konnect.db"  # Default to SQLite for development
+    "sqlite:///./konnect.db",  # Default to SQLite for development
 )
 
 # Create SQLAlchemy engine
 engine = create_engine(
     DATABASE_URL,
-    connect_args={"check_same_thread": False} if "sqlite" in DATABASE_URL else {}
+    connect_args={"check_same_thread": False} if "sqlite" in DATABASE_URL else {},
 )
 
 # Create SessionLocal class
@@ -36,4 +36,10 @@ def get_db() -> Generator[Session, None, None]:
 
 def create_tables():
     """Create database tables"""
-    Base.metadata.create_all(bind=engine)
+    try:
+        Base.metadata.create_all(bind=engine)
+        print(f"✅ Database tables created successfully using: {DATABASE_URL[:50]}...")
+    except Exception as e:
+        print(f"❌ Failed to create database tables: {e}")
+        print(f"Database URL: {DATABASE_URL[:50]}...")
+        raise

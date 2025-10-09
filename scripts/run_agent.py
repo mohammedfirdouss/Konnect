@@ -7,11 +7,12 @@ Konnect's AI agents, particularly the recommendation agent.
 """
 
 import argparse
+import os
 import sys
 from typing import Optional
 
 # Add the project root to the Python path
-sys.path.append("/home/runner/work/Konnect/Konnect")
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from konnect.agents import RecommendationAgent
 
@@ -23,45 +24,36 @@ def main():
     )
 
     parser.add_argument(
-        "query",
-        nargs="?",
-        help="Query to send to the recommendation agent"
+        "query", nargs="?", help="Query to send to the recommendation agent"
     )
 
     parser.add_argument(
-        "--category",
-        help="Search for recommendations in a specific category"
+        "--category", help="Search for recommendations in a specific category"
     )
 
     parser.add_argument(
-        "--budget",
-        type=float,
-        help="Maximum budget for recommendations"
+        "--budget", type=float, help="Maximum budget for recommendations"
     )
 
     parser.add_argument(
-        "--min-price",
-        type=float,
-        help="Minimum price for budget-based search"
+        "--min-price", type=float, help="Minimum price for budget-based search"
     )
 
     parser.add_argument(
-        "--max-price",
-        type=float,
-        help="Maximum price for budget-based search"
+        "--max-price", type=float, help="Maximum price for budget-based search"
     )
 
     parser.add_argument(
         "--model",
         default="gemini-2.0-flash-exp",
-        help="Google GenAI model to use (default: gemini-2.0-flash-exp)"
+        help="Google GenAI model to use (default: gemini-2.0-flash-exp)",
     )
 
     parser.add_argument(
         "--interactive",
         "-i",
         action="store_true",
-        help="Start interactive mode for multiple queries"
+        help="Start interactive mode for multiple queries",
     )
 
     args = parser.parse_args()
@@ -110,7 +102,9 @@ def run_single_query(agent: RecommendationAgent, query: str) -> int:
         return 1
 
 
-def run_category_search(agent: RecommendationAgent, category: str, budget: Optional[float]) -> int:
+def run_category_search(
+    agent: RecommendationAgent, category: str, budget: Optional[float]
+) -> int:
     """Run a category-based search."""
     budget_text = f" (Budget: ${budget})" if budget else ""
     print(f"📂 Category Search: {category}{budget_text}")
@@ -126,7 +120,9 @@ def run_category_search(agent: RecommendationAgent, category: str, budget: Optio
         return 1
 
 
-def run_budget_search(agent: RecommendationAgent, min_price: float, max_price: float) -> int:
+def run_budget_search(
+    agent: RecommendationAgent, min_price: float, max_price: float
+) -> int:
     """Run a budget-based search."""
     print(f"💰 Budget Search: ${min_price} - ${max_price}")
     print("-" * 60)
@@ -150,7 +146,7 @@ def run_interactive_mode(agent: RecommendationAgent) -> int:
         try:
             query = input("\n💬 Enter your query: ").strip()
 
-            if query.lower() in ['quit', 'exit', 'q']:
+            if query.lower() in ["quit", "exit", "q"]:
                 print("👋 Goodbye!")
                 break
 
@@ -190,7 +186,9 @@ def show_examples():
     print("  python scripts/run_agent.py --interactive")
     print()
     print("🔧 Custom Model:")
-    print("  python scripts/run_agent.py --model gemini-1.5-pro \"Best laptops for students\"")
+    print(
+        '  python scripts/run_agent.py --model gemini-1.5-pro "Best laptops for students"'
+    )
     print()
 
 

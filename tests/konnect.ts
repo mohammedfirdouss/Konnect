@@ -1,5 +1,5 @@
 import * as anchor from "@coral-xyz/anchor";
-import { Program } from "@coral-xyz/anchor";
+
 import { Konnect } from "../target/types/konnect";
 import {
   PublicKey,
@@ -22,7 +22,7 @@ describe("konnect marketplace", () => {
   const provider = anchor.AnchorProvider.env();
   anchor.setProvider(provider);
 
-  const program = anchor.workspace.Konnect as Program<Konnect>;
+  const program = anchor.workspace.konnect as anchor.Program<Konnect>;
 
   // Test accounts
   let marketplaceAuthority: Keypair;

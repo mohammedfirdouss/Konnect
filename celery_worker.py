@@ -11,18 +11,17 @@ This would normally be run as:
     celery -A konnect.tasks beat --loglevel=info
 """
 
-import sys
 import os
+import sys
 
 # Add the konnect package to the path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from konnect.tasks import celery_app
 
 if __name__ == "__main__":
     # Simple worker runner for demonstration
     # In production, you'd use the celery CLI command
-    
+
     print("Starting Celery worker for Konnect recommendations...")
     print("Available tasks:")
     print("  - generate_recommendations_for_user")
@@ -34,17 +33,20 @@ if __name__ == "__main__":
     print("Note: In production, run with:")
     print("  celery -A konnect.tasks worker --loglevel=info")
     print("  celery -A konnect.tasks beat --loglevel=info")
-    
+
     # For demonstration purposes, manually trigger some tasks
     print("\nDemonstrating task execution...")
-    
-    from konnect.tasks import generate_recommendations_for_user, generate_recommendations_for_active_users
-    
+
+    from konnect.tasks import (
+        generate_recommendations_for_active_users,
+        generate_recommendations_for_user,
+    )
+
     # Simulate running individual user task
     print("Running task: generate_recommendations_for_user(user_id=1)")
     result = generate_recommendations_for_user(1)
     print(f"Result: {result}")
-    
+
     # Simulate running batch task
     print("Running task: generate_recommendations_for_active_users()")
     result = generate_recommendations_for_active_users()

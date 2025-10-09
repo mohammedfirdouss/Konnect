@@ -6,9 +6,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from konnect import models
 from konnect.database import Base, get_db
 from konnect.main import app
-from konnect import crud, models
 
 # Test database setup
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test_listings.db"
@@ -31,6 +31,7 @@ def override_get_db():
 
 app.dependency_overrides[get_db] = override_get_db
 
+# Create client with mocked Supabase
 client = TestClient(app)
 
 
@@ -46,7 +47,7 @@ def setup_database():
 
 
 @pytest.fixture
-def test_user():
+def test_user(mock_supabase):
     """Create a test user and return authentication token"""
     db = TestingSessionLocal()
     try:
