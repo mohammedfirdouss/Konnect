@@ -246,6 +246,83 @@ def analyze_listing_patterns(listing_id: int) -> Dict[str, Any]:
         db.close()
 
 
+def detect_payment_fraud(order_id: int) -> Dict[str, Any]:
+    """Detect fraud in payment/order transactions.
+
+    Args:
+        order_id: Order ID to analyze
+
+    Returns:
+        Dictionary with payment fraud analysis
+    """
+    db = SessionLocal()
+    try:
+        order = crud.get_order(db, order_id)
+        if not order:
+            return {"error": "Order not found"}
+
+        buyer = crud.get_user(db, order.buyer_id)
+        seller = crud.get_user(db, order.seller_id)
+
+        # Get user's order history
+        buyer_orders = (
+            db.query(models.Order)
+            .filter(models.Order.buyer_id == order.buyer_id)
+            .all()
+        )
+        seller_orders = (
+            db.query(models.Order)
+            .filter(models.Order.seller_id == order.seller_id)
+            .all()
+        )
+
+        analysis = {
+            "order_id": order_id,
+            "buyer_id": order.buyer_id,
+            "seller_id": order.seller_id,
+            "amount": order.total_amount,
+            "buyer_total_orders": len(buyer_orders),
+            "seller_total_orders": len(seller_orders),
+            "risk_factors": [],
+            "risk_score": 0.0,
+        }
+
+        # Calculate risk factors
+        risk_factors = []
+        risk_score = 0.0
+
+        # Unusual amount for buyer
+        buyer_avg_amount = sum(o.total_amount for o in buyer_orders) / len(buyer_orders) if buyer_orders else 0
+        if order.total_amount > buyer_avg_amount * 3 and buyer_avg_amount > 0:
+            risk_factors.append("Unusual high amount for buyer")
+            risk_score += 0.3
+
+        # Unusual amount for seller
+        seller_avg_amount = sum(o.total_amount for o in seller_orders) / len(seller_orders) if seller_orders else 0
+        if order.total_amount > seller_avg_amount * 3 and seller_avg_amount > 0:
+            risk_factors.append("Unusual high amount for seller")
+            risk_score += 0.2
+
+        # New buyer with high amount
+        if buyer and buyer.created_at and (datetime.now() - buyer.created_at).days < 7 and order.total_amount > 100:
+            risk_factors.append("New buyer with high-value transaction")
+            risk_score += 0.4
+
+        # Rapid transactions
+        recent_orders = [o for o in buyer_orders if (datetime.now() - o.created_at).seconds < 3600]  # Last hour
+        if len(recent_orders) > 5:
+            risk_factors.append("Rapid transactions detected")
+            risk_score += 0.3
+
+        analysis["risk_factors"] = risk_factors
+        analysis["risk_score"] = min(1.0, risk_score)
+
+        return analysis
+
+    finally:
+        db.close()
+
+
 def get_recent_fraud_indicators() -> List[Dict[str, Any]]:
     """Get recent fraud indicators across the platform.
 

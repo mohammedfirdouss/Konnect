@@ -14,7 +14,7 @@ from ..schemas import (
 from ..supabase_client import supabase
 from ..agents.fraud_detection import (
     analyze_user_activity,
-    analyze_listing_suspiciousness,
+    analyze_listing_patterns,
     detect_payment_fraud,
 )
 
@@ -159,7 +159,7 @@ def check_listing_fraud(listing_id: int) -> dict:
     """Check listing for fraud patterns"""
     try:
         # Analyze listing suspiciousness
-        analysis = analyze_listing_suspiciousness(listing_id)
+        analysis = analyze_listing_patterns(listing_id)
 
         if "error" in analysis:
             return analysis

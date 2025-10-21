@@ -39,7 +39,7 @@ from .routers import (
 )
 
 # Load environment variables from .env file
-load_dotenv()
+load_dotenv("Konnect.env")
 
 # Configure OpenTelemetry Metrics
 prometheus_reader = PrometheusMetricReader()
