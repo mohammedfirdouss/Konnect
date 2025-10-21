@@ -41,6 +41,11 @@ async def send_message(
 
     # Create message
     db_message = crud.create_message(db, message, current_user.id)
+    
+    # Send notification to recipient
+    from .notifications import notify_new_message
+    notify_new_message(current_user.id, message.recipient_id, message.listing_id)
+    
     return db_message
 
 

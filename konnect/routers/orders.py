@@ -52,12 +52,23 @@ async def create_order(
         # Calculate total amount
         total_amount = listing["price"] * order.quantity
 
-        # TODO: Call Solana smart contract initializeEscrow function
-        # This would:
-        # 1. Transfer SOL from buyer to escrow contract
-        # 2. Create escrow account holding the funds
-        # 3. Return transaction hash
-        escrow_tx_hash = "placeholder_tx_hash"  # Replace with actual Solana transaction
+        # Call Solana smart contract to create escrow
+        from ..solana_client import create_escrow_account
+        
+        # For now, use placeholder keys - in production these would come from user profiles
+        buyer_public_key = "placeholder_buyer_key"
+        seller_public_key = "placeholder_seller_key"
+        
+        success, escrow_tx_hash, escrow_account = create_escrow_account(
+            buyer_public_key=buyer_public_key,
+            seller_public_key=seller_public_key,
+            amount=total_amount,
+            order_id=0,  # Will be updated after order creation
+        )
+        
+        if not success:
+            logger.warning(f"Failed to create escrow account for order")
+            escrow_tx_hash = "escrow_failed"
 
         # Create the order
         order_data = {
@@ -75,8 +86,25 @@ async def create_order(
         response = supabase.table("orders").insert(order_data).execute()
 
         if response.data:
-            logger.info(f"Order created: {response.data[0]['id']}")
-            return response.data[0]
+            order_data = response.data[0]
+            logger.info(f"Order created: {order_data['id']}")
+            
+            # Award points for creating order
+            from .gamification import award_points
+            award_points(
+                current_user["id"],
+                10,  # Points for creating order
+                "order_created",
+                f"Order created for listing {order.listing_id}",
+                order_data["id"],
+                "order"
+            )
+            
+            # Send notification to seller
+            from .notifications import notify_order_update
+            notify_order_update(order_data["id"], "pending", listing["user_id"])
+            
+            return order_data
         else:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -181,8 +209,23 @@ async def confirm_delivery(
                 detail="Order must be shipped before confirming delivery",
             )
 
-        # TODO: Call Solana smart contract releaseFunds function
-        # This would transfer funds from escrow to seller
+        # Call Solana smart contract to release escrow funds
+        from ..solana_client import release_escrow_funds
+        
+        # Get escrow account address from order
+        escrow_account = order.get("escrow_account", "placeholder_escrow")
+        seller_public_key = "placeholder_seller_key"  # Would come from seller profile
+        
+        success, release_tx_hash = release_escrow_funds(
+            escrow_account_address=escrow_account,
+            seller_public_key=seller_public_key,
+            order_id=order_id,
+        )
+        
+        if success:
+            logger.info(f"Escrow funds released for order {order_id}, tx: {release_tx_hash}")
+        else:
+            logger.warning(f"Failed to release escrow funds for order {order_id}")
 
         # Update order status to completed
         update_response = (
@@ -194,6 +237,33 @@ async def confirm_delivery(
 
         if update_response.data:
             logger.info(f"Order {order_id} confirmed delivery")
+            
+            # Award points for completing order
+            from .gamification import award_points
+            award_points(
+                current_user["id"],
+                50,  # Points for completing order
+                "order_completed",
+                f"Order {order_id} completed",
+                order_id,
+                "order"
+            )
+            
+            # Award points to seller
+            award_points(
+                order["seller_id"],
+                100,  # Points for sale completed
+                "sale_completed",
+                f"Sale completed for order {order_id}",
+                order_id,
+                "order"
+            )
+            
+            # Send notifications
+            from .notifications import notify_order_update, notify_delivery_confirmed
+            notify_order_update(order_id, "completed", order["seller_id"])
+            notify_delivery_confirmed(order_id, current_user["id"])
+            
             return update_response.data[0]
         else:
             raise HTTPException(
@@ -261,6 +331,11 @@ async def dispute_order(
 
         if update_response.data:
             logger.info(f"Order {order_id} disputed")
+            
+            # Send notifications
+            from .notifications import notify_order_update
+            notify_order_update(order_id, "disputed", order["seller_id"])
+            
             # TODO: Notify admin/campus moderator about the dispute
             return update_response.data[0]
         else:
