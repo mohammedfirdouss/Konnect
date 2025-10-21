@@ -713,3 +713,230 @@ class FraudDetectionResponse(BaseModel):
     total_count: int
     page: int
     page_size: int
+
+
+# Gamification schemas
+class UserPoints(BaseModel):
+    """User points schema"""
+
+    id: int
+    user_id: int
+    points: int
+    level: int
+    total_points_earned: int
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class UserBadge(BaseModel):
+    """User badge schema"""
+
+    id: int
+    user_id: int
+    badge_name: str
+    badge_description: Optional[str] = None
+    badge_type: str
+    earned_at: datetime
+    points_awarded: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class PointsTransaction(BaseModel):
+    """Points transaction schema"""
+
+    id: int
+    user_id: int
+    points_change: int
+    transaction_type: str
+    description: Optional[str] = None
+    related_entity_id: Optional[int] = None
+    related_entity_type: Optional[str] = None
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CampusLeaderboard(BaseModel):
+    """Campus leaderboard schema"""
+
+    id: int
+    marketplace_id: int
+    user_id: int
+    rank: int
+    points: int
+    level: int
+    badges_count: int
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class LeaderboardEntry(BaseModel):
+    """Leaderboard entry with user details"""
+
+    rank: int
+    user_id: int
+    username: str
+    full_name: Optional[str] = None
+    points: int
+    level: int
+    badges_count: int
+
+
+class LeaderboardResponse(BaseModel):
+    """Leaderboard response schema"""
+
+    entries: List[LeaderboardEntry] = []
+    total_count: int
+    marketplace_id: int
+    updated_at: datetime
+
+
+# Bills and Subscriptions schemas
+class BillPayment(BaseModel):
+    """Bill payment schema"""
+
+    id: int
+    user_id: int
+    bill_type: str
+    amount: float
+    description: Optional[str] = None
+    due_date: Optional[datetime] = None
+    status: str
+    payment_method: Optional[str] = None
+    transaction_hash: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class BillPaymentCreate(BaseModel):
+    """Bill payment creation schema"""
+
+    bill_type: str
+    amount: float
+    description: Optional[str] = None
+    due_date: Optional[datetime] = None
+
+
+class BillPaymentResponse(BaseModel):
+    """Bill payment response schema"""
+
+    message: str
+    bill_payment: BillPayment
+    points_awarded: int = 0
+
+
+# Wallet schemas
+class WalletTransaction(BaseModel):
+    """Wallet transaction schema"""
+
+    id: int
+    user_id: int
+    transaction_type: str
+    amount: float
+    balance_before: float
+    balance_after: float
+    description: Optional[str] = None
+    transaction_hash: Optional[str] = None
+    status: str
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class WalletBalance(BaseModel):
+    """Wallet balance schema"""
+
+    user_id: int
+    current_balance: float
+    total_deposited: float
+    total_withdrawn: float
+    total_spent: float
+    last_transaction_at: Optional[datetime] = None
+
+
+class WalletDepositRequest(BaseModel):
+    """Wallet deposit request schema"""
+
+    amount: float
+    description: Optional[str] = None
+
+
+class WalletWithdrawalRequest(BaseModel):
+    """Wallet withdrawal request schema"""
+
+    amount: float
+    description: Optional[str] = None
+
+
+# Delivery confirmation schemas
+class DeliveryCode(BaseModel):
+    """Delivery code schema"""
+
+    id: int
+    order_id: int
+    code: str
+    expires_at: datetime
+    is_used: bool
+    used_at: Optional[datetime] = None
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class DeliveryConfirmationRequest(BaseModel):
+    """Delivery confirmation request schema"""
+
+    delivery_code: str
+
+
+class DeliveryConfirmationResponse(BaseModel):
+    """Delivery confirmation response schema"""
+
+    success: bool
+    message: str
+    order_id: int
+    escrow_released: bool
+    transaction_hash: Optional[str] = None
+
+
+# Notification schemas
+class Notification(BaseModel):
+    """Notification schema"""
+
+    id: int
+    user_id: int
+    title: str
+    message: str
+    notification_type: str
+    is_read: bool
+    read_at: Optional[datetime] = None
+    related_entity_id: Optional[int] = None
+    related_entity_type: Optional[str] = None
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class NotificationCreate(BaseModel):
+    """Notification creation schema"""
+
+    user_id: int
+    title: str
+    message: str
+    notification_type: str
+    related_entity_id: Optional[int] = None
+    related_entity_type: Optional[str] = None
+
+
+class NotificationResponse(BaseModel):
+    """Notification response schema"""
+
+    notifications: List[Notification] = []
+    unread_count: int
+    total_count: int
