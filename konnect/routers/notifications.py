@@ -67,7 +67,9 @@ def notify_order_update(order_id: int, status: str, user_id: int):
     }
 
     title = f"Order #{order_id} Update"
-    message = status_messages.get(status, f"Your order status has been updated to {status}")
+    message = status_messages.get(
+        status, f"Your order status has been updated to {status}"
+    )
 
     create_notification(
         user_id=user_id,
@@ -112,7 +114,9 @@ def notify_delivery_confirmed(order_id: int, buyer_id: int):
 def notify_bill_due(user_id: int, bill_type: str, amount: float, due_date: datetime):
     """Send notification for bill due"""
     title = "Bill Payment Due"
-    message = f"Your {bill_type} bill of ${amount} is due on {due_date.strftime('%Y-%m-%d')}"
+    message = (
+        f"Your {bill_type} bill of ${amount} is due on {due_date.strftime('%Y-%m-%d')}"
+    )
 
     create_notification(
         user_id=user_id,
@@ -127,7 +131,7 @@ def notify_new_message(sender_id: int, recipient_id: int, listing_id: int = None
     """Send notification for new message"""
     title = "New Message"
     message = "You have received a new message"
-    
+
     if listing_id:
         message += " about a listing"
 
@@ -145,7 +149,9 @@ def notify_new_message(sender_id: int, recipient_id: int, listing_id: int = None
 async def get_notifications(
     current_user: dict = Depends(get_current_active_user),
     is_read: Optional[bool] = Query(None, description="Filter by read status"),
-    notification_type: Optional[str] = Query(None, description="Filter by notification type"),
+    notification_type: Optional[str] = Query(
+        None, description="Filter by notification type"
+    ),
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
 ):
@@ -272,10 +278,12 @@ async def mark_notification_read(
         # Mark as read
         response = (
             supabase.table("notifications")
-            .update({
-                "is_read": True,
-                "read_at": datetime.utcnow().isoformat(),
-            })
+            .update(
+                {
+                    "is_read": True,
+                    "read_at": datetime.utcnow().isoformat(),
+                }
+            )
             .eq("id", notification_id)
             .execute()
         )
@@ -312,10 +320,12 @@ async def mark_all_notifications_read(
     try:
         (
             supabase.table("notifications")
-            .update({
-                "is_read": True,
-                "read_at": datetime.utcnow().isoformat(),
-            })
+            .update(
+                {
+                    "is_read": True,
+                    "read_at": datetime.utcnow().isoformat(),
+                }
+            )
             .eq("user_id", current_user["id"])
             .eq("is_read", False)
             .execute()

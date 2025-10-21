@@ -68,27 +68,27 @@ def check_user_fraud(user_id: int) -> dict:
     try:
         # Analyze user activity
         analysis = analyze_user_activity(user_id)
-        
+
         if "error" in analysis:
             return analysis
 
         # Calculate risk score based on analysis
         risk_score = 0.0
         flagged_reasons = []
-        
+
         # Check for suspicious patterns
         if analysis.get("rapid_listing_creation", False):
             risk_score += 0.3
             flagged_reasons.append("Rapid listing creation detected")
-        
+
         if analysis.get("unusual_pricing_patterns", False):
             risk_score += 0.2
             flagged_reasons.append("Unusual pricing patterns detected")
-        
+
         if analysis.get("high_dispute_rate", False):
             risk_score += 0.4
             flagged_reasons.append("High dispute rate detected")
-        
+
         if analysis.get("suspicious_activity", False):
             risk_score += 0.3
             flagged_reasons.append("Suspicious activity patterns detected")
@@ -105,22 +105,22 @@ def check_user_fraud(user_id: int) -> dict:
         ai_analysis = None
         try:
             from ..routers.ai import generate_ai_response, AI_SERVICE_ENABLED
-            
+
             if AI_SERVICE_ENABLED:
                 context = f"""
                 User Fraud Analysis:
                 - User ID: {user_id}
                 - Risk Score: {risk_score}
                 - Risk Level: {risk_level}
-                - Flagged Reasons: {', '.join(flagged_reasons)}
+                - Flagged Reasons: {", ".join(flagged_reasons)}
                 - Activity Analysis: {analysis}
                 
                 Provide detailed fraud analysis and recommendations for this user.
                 """
-                
+
                 ai_analysis = generate_ai_response(
                     "Analyze this user's fraud risk and provide detailed insights:",
-                    context
+                    context,
                 )
         except Exception as e:
             logger.warning(f"AI fraud analysis failed: {e}")
@@ -144,7 +144,7 @@ def check_user_fraud(user_id: int) -> dict:
             "flagged_reasons": flagged_reasons,
             "analysis": analysis,
         }
-        
+
         if ai_analysis:
             result["ai_analysis"] = ai_analysis
 
@@ -160,27 +160,27 @@ def check_listing_fraud(listing_id: int) -> dict:
     try:
         # Analyze listing suspiciousness
         analysis = analyze_listing_suspiciousness(listing_id)
-        
+
         if "error" in analysis:
             return analysis
 
         # Calculate risk score
         risk_score = 0.0
         flagged_reasons = []
-        
+
         # Check for suspicious patterns
         if analysis.get("suspicious_title", False):
             risk_score += 0.2
             flagged_reasons.append("Suspicious title detected")
-        
+
         if analysis.get("unrealistic_pricing", False):
             risk_score += 0.3
             flagged_reasons.append("Unrealistic pricing detected")
-        
+
         if analysis.get("duplicate_content", False):
             risk_score += 0.4
             flagged_reasons.append("Duplicate content detected")
-        
+
         if analysis.get("spam_keywords", False):
             risk_score += 0.3
             flagged_reasons.append("Spam keywords detected")
@@ -223,27 +223,27 @@ def check_payment_fraud(order_id: int) -> dict:
     try:
         # Analyze payment fraud
         analysis = detect_payment_fraud(order_id)
-        
+
         if "error" in analysis:
             return analysis
 
         # Calculate risk score
         risk_score = 0.0
         flagged_reasons = []
-        
+
         # Check for suspicious patterns
         if analysis.get("unusual_amount", False):
             risk_score += 0.3
             flagged_reasons.append("Unusual payment amount detected")
-        
+
         if analysis.get("rapid_transactions", False):
             risk_score += 0.4
             flagged_reasons.append("Rapid transactions detected")
-        
+
         if analysis.get("suspicious_timing", False):
             risk_score += 0.2
             flagged_reasons.append("Suspicious transaction timing")
-        
+
         if analysis.get("pattern_anomaly", False):
             risk_score += 0.3
             flagged_reasons.append("Transaction pattern anomaly detected")
@@ -295,7 +295,7 @@ async def check_user_fraud_endpoint(
         )
 
     result = check_user_fraud(user_id)
-    
+
     if "error" in result:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -319,7 +319,7 @@ async def check_listing_fraud_endpoint(
         )
 
     result = check_listing_fraud(listing_id)
-    
+
     if "error" in result:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -343,7 +343,7 @@ async def check_payment_fraud_endpoint(
         )
 
     result = check_payment_fraud(order_id)
-    
+
     if "error" in result:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -377,9 +377,7 @@ async def get_fraud_reports(
 
     try:
         query = (
-            supabase.table("fraud_reports")
-            .select("*")
-            .order("created_at", desc=True)
+            supabase.table("fraud_reports").select("*").order("created_at", desc=True)
         )
 
         if risk_level:
@@ -394,11 +392,7 @@ async def get_fraud_reports(
         reports = response.data or []
 
         # Get summary statistics
-        total_response = (
-            supabase.table("fraud_reports")
-            .select("id")
-            .execute()
-        )
+        total_response = supabase.table("fraud_reports").select("id").execute()
 
         high_risk_response = (
             supabase.table("fraud_reports")
@@ -423,14 +417,26 @@ async def get_fraud_reports(
 
         summary = FraudDetectionSummary(
             total_reports=len(total_response.data) if total_response.data else 0,
-            high_risk_reports=len(high_risk_response.data) if high_risk_response.data else 0,
-            medium_risk_reports=len(medium_risk_response.data) if medium_risk_response.data else 0,
-            pending_investigation=len(pending_response.data) if pending_response.data else 0,
+            high_risk_reports=len(high_risk_response.data)
+            if high_risk_response.data
+            else 0,
+            medium_risk_reports=len(medium_risk_response.data)
+            if medium_risk_response.data
+            else 0,
+            pending_investigation=len(pending_response.data)
+            if pending_response.data
+            else 0,
             recent_activity=reports[:5],  # Top 5 recent reports
             risk_trends={
-                "user_fraud": len([r for r in reports if r.get("entity_type") == "user"]),
-                "listing_fraud": len([r for r in reports if r.get("entity_type") == "listing"]),
-                "payment_fraud": len([r for r in reports if r.get("entity_type") == "payment"]),
+                "user_fraud": len(
+                    [r for r in reports if r.get("entity_type") == "user"]
+                ),
+                "listing_fraud": len(
+                    [r for r in reports if r.get("entity_type") == "listing"]
+                ),
+                "payment_fraud": len(
+                    [r for r in reports if r.get("entity_type") == "payment"]
+                ),
             },
         )
 

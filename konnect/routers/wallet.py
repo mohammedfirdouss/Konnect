@@ -60,7 +60,7 @@ def create_wallet_transaction(
 
     try:
         current_balance = get_user_wallet_balance(user_id)
-        
+
         # Calculate new balance
         if transaction_type in ["deposit", "refund"]:
             new_balance = current_balance + amount
@@ -81,7 +81,9 @@ def create_wallet_transaction(
             "status": "completed",
         }
 
-        response = supabase.table("wallet_transactions").insert(transaction_data).execute()
+        response = (
+            supabase.table("wallet_transactions").insert(transaction_data).execute()
+        )
 
         if response.data:
             logger.info(f"Wallet transaction created: {response.data[0]['id']}")
@@ -122,16 +124,17 @@ async def get_wallet_balance(
 
         # Calculate totals
         total_deposited = sum(
-            t["amount"] for t in transactions 
+            t["amount"]
+            for t in transactions
             if t["transaction_type"] in ["deposit", "refund"]
         )
         total_withdrawn = sum(
-            t["amount"] for t in transactions 
+            t["amount"]
+            for t in transactions
             if t["transaction_type"] in ["withdrawal", "payment"]
         )
         total_spent = sum(
-            t["amount"] for t in transactions 
-            if t["transaction_type"] == "payment"
+            t["amount"] for t in transactions if t["transaction_type"] == "payment"
         )
 
         # Get last transaction date
@@ -160,7 +163,9 @@ async def get_wallet_balance(
 @router.get("/transactions", response_model=List[WalletTransaction])
 async def get_wallet_transactions(
     current_user: dict = Depends(get_current_active_user),
-    transaction_type: Optional[str] = Query(None, description="Filter by transaction type"),
+    transaction_type: Optional[str] = Query(
+        None, description="Filter by transaction type"
+    ),
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
 ):
@@ -215,7 +220,9 @@ async def deposit_to_wallet(
     try:
         # TODO: Process actual Solana deposit
         # For now, simulate successful deposit
-        transaction_hash = f"deposit_{current_user['id']}_{datetime.utcnow().timestamp()}"
+        transaction_hash = (
+            f"deposit_{current_user['id']}_{datetime.utcnow().timestamp()}"
+        )
 
         success = create_wallet_transaction(
             user_id=current_user["id"],
@@ -276,7 +283,9 @@ async def withdraw_from_wallet(
 
         # TODO: Process actual Solana withdrawal
         # For now, simulate successful withdrawal
-        transaction_hash = f"withdrawal_{current_user['id']}_{datetime.utcnow().timestamp()}"
+        transaction_hash = (
+            f"withdrawal_{current_user['id']}_{datetime.utcnow().timestamp()}"
+        )
 
         success = create_wallet_transaction(
             user_id=current_user["id"],
@@ -368,10 +377,12 @@ async def pay_with_wallet(
             # Update order status
             update_response = (
                 supabase.table("orders")
-                .update({
-                    "status": "paid",
-                    "updated_at": datetime.utcnow().isoformat(),
-                })
+                .update(
+                    {
+                        "status": "paid",
+                        "updated_at": datetime.utcnow().isoformat(),
+                    }
+                )
                 .eq("id", order_id)
                 .execute()
             )

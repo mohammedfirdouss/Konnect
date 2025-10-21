@@ -34,7 +34,7 @@ def create_delivery_code(order_id: int) -> str:
     try:
         # Generate unique delivery code
         code = generate_delivery_code()
-        
+
         # Ensure code is unique
         while True:
             existing = (
@@ -52,7 +52,9 @@ def create_delivery_code(order_id: int) -> str:
         delivery_data = {
             "order_id": order_id,
             "code": code,
-            "expires_at": (datetime.utcnow() + timedelta(hours=24)).isoformat(),  # 24 hour expiry
+            "expires_at": (
+                datetime.utcnow() + timedelta(hours=24)
+            ).isoformat(),  # 24 hour expiry
             "is_used": False,
         }
 
@@ -92,11 +94,7 @@ async def generate_delivery_code_for_order(
     try:
         # Get the order
         order_response = (
-            supabase.table("orders")
-            .select("*")
-            .eq("id", order_id)
-            .single()
-            .execute()
+            supabase.table("orders").select("*").eq("id", order_id).single().execute()
         )
 
         if not order_response.data:
@@ -214,10 +212,12 @@ async def confirm_delivery(
         # Mark delivery code as used
         update_code_response = (
             supabase.table("delivery_codes")
-            .update({
-                "is_used": True,
-                "used_at": datetime.utcnow().isoformat(),
-            })
+            .update(
+                {
+                    "is_used": True,
+                    "used_at": datetime.utcnow().isoformat(),
+                }
+            )
             .eq("id", code_data["id"])
             .execute()
         )
@@ -231,10 +231,12 @@ async def confirm_delivery(
         # Update order status to completed
         update_order_response = (
             supabase.table("orders")
-            .update({
-                "status": "completed",
-                "updated_at": datetime.utcnow().isoformat(),
-            })
+            .update(
+                {
+                    "status": "completed",
+                    "updated_at": datetime.utcnow().isoformat(),
+                }
+            )
             .eq("id", order["id"])
             .execute()
         )
@@ -247,23 +249,25 @@ async def confirm_delivery(
 
         # Call Solana smart contract to release escrow funds
         from ..solana_client import release_escrow_funds
-        
+
         # Get escrow account address from order
         escrow_account = order.get("escrow_account", "placeholder_escrow")
         seller_public_key = "placeholder_seller_key"  # Would come from seller profile
-        
+
         success, transaction_hash = release_escrow_funds(
             escrow_account_address=escrow_account,
             seller_public_key=seller_public_key,
             order_id=order["id"],
         )
-        
+
         escrow_released = success
         if not success:
             transaction_hash = None
             logger.warning(f"Failed to release escrow funds for order {order['id']}")
 
-        logger.info(f"Delivery confirmed for order {order['id']} with code {confirmation.delivery_code}")
+        logger.info(
+            f"Delivery confirmed for order {order['id']} with code {confirmation.delivery_code}"
+        )
 
         return DeliveryConfirmationResponse(
             success=True,
@@ -298,11 +302,7 @@ async def get_delivery_code(
     try:
         # Get the order
         order_response = (
-            supabase.table("orders")
-            .select("*")
-            .eq("id", order_id)
-            .single()
-            .execute()
+            supabase.table("orders").select("*").eq("id", order_id).single().execute()
         )
 
         if not order_response.data:

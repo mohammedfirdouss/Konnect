@@ -23,7 +23,7 @@ router = APIRouter(prefix="/solana", tags=["solana"])
 async def solana_health_check():
     """Check Solana blockchain connection health"""
     connection_status = check_solana_connection()
-    
+
     if connection_status.get("solana_available"):
         return {
             "status": "healthy",
@@ -48,9 +48,9 @@ async def get_balance(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid Solana public key address",
         )
-    
+
     balance = get_solana_balance(public_key)
-    
+
     return {
         "public_key": public_key,
         "balance_sol": balance,
@@ -65,7 +65,7 @@ async def validate_address(
 ):
     """Validate a Solana public key address"""
     is_valid = validate_solana_address(address)
-    
+
     return {
         "address": address,
         "is_valid": is_valid,
@@ -78,7 +78,7 @@ async def get_transaction_fee(
 ):
     """Get estimated transaction fee"""
     fee = estimate_transaction_fee()
-    
+
     return {
         "fee_sol": fee,
         "fee_lamports": int(fee * 1_000_000_000),
@@ -92,13 +92,13 @@ async def get_transaction_status(
 ):
     """Get status of a Solana transaction"""
     status = get_solana_transaction_status(transaction_hash)
-    
+
     if "error" in status:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=status["error"],
         )
-    
+
     return status
 
 
@@ -109,13 +109,13 @@ async def get_escrow_info(
 ):
     """Get information about an escrow account"""
     info = get_escrow_account_info(escrow_address)
-    
+
     if "error" in info:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=info["error"],
         )
-    
+
     return info
 
 
@@ -134,35 +134,35 @@ async def create_escrow(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid buyer public key",
         )
-    
+
     if not validate_solana_address(seller_public_key):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid seller public key",
         )
-    
+
     if amount <= 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Amount must be positive",
         )
-    
+
     # Import here to avoid circular imports
     from ..solana_client import create_escrow_account
-    
+
     success, transaction_hash, escrow_account = create_escrow_account(
         buyer_public_key=buyer_public_key,
         seller_public_key=seller_public_key,
         amount=amount,
         order_id=order_id,
     )
-    
+
     if not success:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create escrow account",
         )
-    
+
     return {
         "success": True,
         "transaction_hash": transaction_hash,
@@ -185,22 +185,22 @@ async def release_escrow(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid seller public key",
         )
-    
+
     # Import here to avoid circular imports
     from ..solana_client import release_escrow_funds
-    
+
     success, transaction_hash = release_escrow_funds(
         escrow_account_address=escrow_account,
         seller_public_key=seller_public_key,
         order_id=order_id,
     )
-    
+
     if not success:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to release escrow funds",
         )
-    
+
     return {
         "success": True,
         "transaction_hash": transaction_hash,
@@ -223,23 +223,23 @@ async def refund_escrow(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid buyer public key",
         )
-    
+
     # Import here to avoid circular imports
     from ..solana_client import refund_escrow_funds
-    
+
     success, transaction_hash = refund_escrow_funds(
         escrow_account_address=escrow_account,
         buyer_public_key=buyer_public_key,
         order_id=order_id,
         reason=reason,
     )
-    
+
     if not success:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to refund escrow funds",
         )
-    
+
     return {
         "success": True,
         "transaction_hash": transaction_hash,

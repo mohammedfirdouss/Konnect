@@ -34,9 +34,7 @@ POINTS_CONFIG = {
 }
 
 # Level thresholds (points required for each level)
-LEVEL_THRESHOLDS = [
-    0, 100, 250, 500, 1000, 2000, 3500, 5500, 8000, 11000, 15000
-]
+LEVEL_THRESHOLDS = [0, 100, 250, 500, 1000, 2000, 3500, 5500, 8000, 11000, 15000]
 
 
 def calculate_level(points: int) -> int:
@@ -75,34 +73,41 @@ def award_points(
             current_points = points_response.data["points"]
             new_points = current_points + points
             new_level = calculate_level(new_points)
-            
-            supabase.table("user_points").update({
-                "points": new_points,
-                "level": new_level,
-                "total_points_earned": points_response.data["total_points_earned"] + points,
-                "updated_at": datetime.utcnow().isoformat(),
-            }).eq("user_id", user_id).execute()
+
+            supabase.table("user_points").update(
+                {
+                    "points": new_points,
+                    "level": new_level,
+                    "total_points_earned": points_response.data["total_points_earned"]
+                    + points,
+                    "updated_at": datetime.utcnow().isoformat(),
+                }
+            ).eq("user_id", user_id).execute()
         else:
             # Create new points record
             new_points = points
             new_level = calculate_level(points)
-            
-            supabase.table("user_points").insert({
-                "user_id": user_id,
-                "points": new_points,
-                "level": new_level,
-                "total_points_earned": points,
-            }).execute()
+
+            supabase.table("user_points").insert(
+                {
+                    "user_id": user_id,
+                    "points": new_points,
+                    "level": new_level,
+                    "total_points_earned": points,
+                }
+            ).execute()
 
         # Create transaction record
-        supabase.table("points_transactions").insert({
-            "user_id": user_id,
-            "points_change": points,
-            "transaction_type": transaction_type,
-            "description": description,
-            "related_entity_id": related_entity_id,
-            "related_entity_type": related_entity_type,
-        }).execute()
+        supabase.table("points_transactions").insert(
+            {
+                "user_id": user_id,
+                "points_change": points,
+                "transaction_type": transaction_type,
+                "description": description,
+                "related_entity_id": related_entity_id,
+                "related_entity_type": related_entity_type,
+            }
+        ).execute()
 
         # Check for level up badges
         if new_level > 1:
@@ -120,7 +125,7 @@ def check_level_badges(user_id: int, level: int):
     """Check and award level-based badges"""
     badge_name = f"Level {level} Achiever"
     badge_description = f"Reached level {level} in the campus marketplace"
-    
+
     # Check if user already has this badge
     existing_badge = (
         supabase.table("user_badges")
@@ -129,21 +134,23 @@ def check_level_badges(user_id: int, level: int):
         .eq("badge_name", badge_name)
         .execute()
     )
-    
+
     if not existing_badge.data:
         # Award the badge
         badge_response = (
             supabase.table("user_badges")
-            .insert({
-                "user_id": user_id,
-                "badge_name": badge_name,
-                "badge_description": badge_description,
-                "badge_type": "milestone",
-                "points_awarded": POINTS_CONFIG.get("badge_earned", 50),
-            })
+            .insert(
+                {
+                    "user_id": user_id,
+                    "badge_name": badge_name,
+                    "badge_description": badge_description,
+                    "badge_type": "milestone",
+                    "points_awarded": POINTS_CONFIG.get("badge_earned", 50),
+                }
+            )
             .execute()
         )
-        
+
         if badge_response.data:
             # Award points for earning the badge
             award_points(
@@ -152,7 +159,7 @@ def check_level_badges(user_id: int, level: int):
                 "badge_earned",
                 f"Earned {badge_name} badge",
                 badge_response.data[0]["id"],
-                "badge"
+                "badge",
             )
 
 
@@ -174,9 +181,7 @@ def update_leaderboard(marketplace_id: int):
 
         # Sort by points descending
         sorted_users = sorted(
-            users_response.data,
-            key=lambda x: x["points"],
-            reverse=True
+            users_response.data, key=lambda x: x["points"], reverse=True
         )
 
         # Update leaderboard
@@ -184,7 +189,7 @@ def update_leaderboard(marketplace_id: int):
             user_id = user_data["user_id"]
             points = user_data["points"]
             level = user_data["level"]
-            
+
             # Count badges for this user
             badges_response = (
                 supabase.table("user_badges")
@@ -195,15 +200,17 @@ def update_leaderboard(marketplace_id: int):
             badges_count = len(badges_response.data) if badges_response.data else 0
 
             # Upsert leaderboard entry
-            supabase.table("campus_leaderboard").upsert({
-                "marketplace_id": marketplace_id,
-                "user_id": user_id,
-                "rank": rank,
-                "points": points,
-                "level": level,
-                "badges_count": badges_count,
-                "updated_at": datetime.utcnow().isoformat(),
-            }).execute()
+            supabase.table("campus_leaderboard").upsert(
+                {
+                    "marketplace_id": marketplace_id,
+                    "user_id": user_id,
+                    "rank": rank,
+                    "points": points,
+                    "level": level,
+                    "badges_count": badges_count,
+                    "updated_at": datetime.utcnow().isoformat(),
+                }
+            ).execute()
 
         logger.info(f"Updated leaderboard for marketplace {marketplace_id}")
 
@@ -237,12 +244,14 @@ async def get_user_points(
             # Create initial points record
             create_response = (
                 supabase.table("user_points")
-                .insert({
-                    "user_id": current_user["id"],
-                    "points": 0,
-                    "level": 1,
-                    "total_points_earned": 0,
-                })
+                .insert(
+                    {
+                        "user_id": current_user["id"],
+                        "points": 0,
+                        "level": 1,
+                        "total_points_earned": 0,
+                    }
+                )
                 .execute()
             )
             return create_response.data[0]
@@ -309,7 +318,9 @@ async def get_ai_gamification_recommendations(
 
         # Prepare data for AI analysis
         user_level = points_response.data.get("level", 1) if points_response.data else 1
-        user_points = points_response.data.get("points", 0) if points_response.data else 0
+        user_points = (
+            points_response.data.get("points", 0) if points_response.data else 0
+        )
         badges_count = len(badges_response.data) if badges_response.data else 0
         transactions = transactions_response.data or []
         orders = orders_response.data or []
@@ -324,7 +335,7 @@ async def get_ai_gamification_recommendations(
         # Generate AI recommendations
         try:
             from ..routers.ai import generate_ai_response, AI_SERVICE_ENABLED
-            
+
             if AI_SERVICE_ENABLED:
                 context = f"""
                 User Gamification Profile:
@@ -340,41 +351,53 @@ async def get_ai_gamification_recommendations(
                 
                 Provide personalized gamification recommendations to help this user level up and earn more badges.
                 """
-                
+
                 ai_recommendations = generate_ai_response(
                     "Analyze this user's gamification profile and provide actionable recommendations:",
-                    context
+                    context,
                 )
             else:
-                ai_recommendations = "AI service not available for personalized recommendations"
+                ai_recommendations = (
+                    "AI service not available for personalized recommendations"
+                )
         except Exception as e:
             logger.warning(f"AI gamification recommendations failed: {e}")
             ai_recommendations = "AI service temporarily unavailable"
 
         # Calculate next level requirements
-        next_level_threshold = LEVEL_THRESHOLDS[user_level] if user_level < len(LEVEL_THRESHOLDS) else LEVEL_THRESHOLDS[-1]
+        next_level_threshold = (
+            LEVEL_THRESHOLDS[user_level]
+            if user_level < len(LEVEL_THRESHOLDS)
+            else LEVEL_THRESHOLDS[-1]
+        )
         points_to_next_level = next_level_threshold - user_points
 
         # Suggest specific actions based on current level
         suggested_actions = []
         if user_level < 5:
-            suggested_actions.extend([
-                "Complete your first sale to earn 100 points",
-                "Create 5 active listings to earn listing points",
-                "Leave reviews for completed orders"
-            ])
+            suggested_actions.extend(
+                [
+                    "Complete your first sale to earn 100 points",
+                    "Create 5 active listings to earn listing points",
+                    "Leave reviews for completed orders",
+                ]
+            )
         elif user_level < 10:
-            suggested_actions.extend([
-                "Aim for 10 completed sales this month",
-                "Maintain 5+ active listings",
-                "Help other users with marketplace questions"
-            ])
+            suggested_actions.extend(
+                [
+                    "Aim for 10 completed sales this month",
+                    "Maintain 5+ active listings",
+                    "Help other users with marketplace questions",
+                ]
+            )
         else:
-            suggested_actions.extend([
-                "Mentor new sellers to earn mentor badges",
-                "Achieve 95%+ completion rate",
-                "Participate in campus marketplace events"
-            ])
+            suggested_actions.extend(
+                [
+                    "Mentor new sellers to earn mentor badges",
+                    "Achieve 95%+ completion rate",
+                    "Participate in campus marketplace events",
+                ]
+            )
 
         return {
             "user_id": current_user["id"],
@@ -390,8 +413,8 @@ async def get_ai_gamification_recommendations(
                 "completed_orders": completed_orders,
                 "total_listings": total_listings,
                 "active_listings": active_listings,
-                "recent_transactions": len(transactions)
-            }
+                "recent_transactions": len(transactions),
+            },
         }
 
     except Exception as e:

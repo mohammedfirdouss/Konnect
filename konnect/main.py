@@ -153,9 +153,10 @@ async def health_check():
 
     # Check Supabase connection
     supabase_status = check_supabase_connection()
-    
+
     # Check Solana connection
     from .solana_client import check_solana_connection
+
     solana_status = check_solana_connection()
 
     health_status = {

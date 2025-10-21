@@ -20,7 +20,9 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/bills", tags=["bills"])
 
 
-@router.post("/", response_model=BillPaymentResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/", response_model=BillPaymentResponse, status_code=status.HTTP_201_CREATED
+)
 async def create_bill_payment(
     bill: BillPaymentCreate,
     current_user: dict = Depends(get_current_active_user),
@@ -47,7 +49,7 @@ async def create_bill_payment(
 
         if response.data:
             bill_payment = response.data[0]
-            
+
             # Award points for bill payment
             points_awarded = 0
             if bill.bill_type in ["tuition", "housing", "meal_plan"]:
@@ -58,7 +60,7 @@ async def create_bill_payment(
                     "bill_payment",
                     f"Bill payment created: {bill.bill_type}",
                     bill_payment["id"],
-                    "bill_payment"
+                    "bill_payment",
                 )
 
             logger.info(f"Bill payment created: {bill_payment['id']}")
@@ -203,12 +205,14 @@ async def pay_bill(
         # Update bill payment status
         update_response = (
             supabase.table("bill_payments")
-            .update({
-                "status": "paid",
-                "payment_method": payment_method,
-                "transaction_hash": transaction_hash,
-                "updated_at": datetime.utcnow().isoformat(),
-            })
+            .update(
+                {
+                    "status": "paid",
+                    "payment_method": payment_method,
+                    "transaction_hash": transaction_hash,
+                    "updated_at": datetime.utcnow().isoformat(),
+                }
+            )
             .eq("id", bill_id)
             .execute()
         )
@@ -222,7 +226,7 @@ async def pay_bill(
                 "bill_payment_completed",
                 f"Bill payment completed: {bill['bill_type']}",
                 bill_id,
-                "bill_payment"
+                "bill_payment",
             )
 
             logger.info(f"Bill payment {bill_id} completed")
@@ -274,7 +278,7 @@ async def get_bills_summary(
         paid_bills = len([b for b in bills if b["status"] == "paid"])
         pending_bills = len([b for b in bills if b["status"] == "pending"])
         overdue_bills = len([b for b in bills if b["status"] == "overdue"])
-        
+
         total_amount = sum(b["amount"] for b in bills)
         paid_amount = sum(b["amount"] for b in bills if b["status"] == "paid")
         pending_amount = sum(b["amount"] for b in bills if b["status"] == "pending")
@@ -292,7 +296,7 @@ async def get_bills_summary(
         ai_insights = None
         try:
             from ..routers.ai import generate_ai_response, AI_SERVICE_ENABLED
-            
+
             if AI_SERVICE_ENABLED:
                 context = f"""
                 User Bill Payment Profile:
@@ -309,10 +313,10 @@ async def get_bills_summary(
                 
                 Provide financial insights and recommendations for better bill management.
                 """
-                
+
                 ai_insights = generate_ai_response(
                     "Analyze this user's bill payment patterns and provide financial advice:",
-                    context
+                    context,
                 )
         except Exception as e:
             logger.warning(f"AI bills insights failed: {e}")
@@ -328,7 +332,7 @@ async def get_bills_summary(
             "bill_types": bill_types,
             "payment_rate": (paid_bills / total_bills * 100) if total_bills > 0 else 0,
         }
-        
+
         if ai_insights:
             result["ai_insights"] = ai_insights
 

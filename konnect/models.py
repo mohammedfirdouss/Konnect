@@ -377,11 +377,17 @@ class PointsTransaction(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    points_change = Column(Integer, nullable=False)  # Positive for earned, negative for spent
-    transaction_type = Column(String(50), nullable=False)  # purchase, sale, review, badge, etc.
+    points_change = Column(
+        Integer, nullable=False
+    )  # Positive for earned, negative for spent
+    transaction_type = Column(
+        String(50), nullable=False
+    )  # purchase, sale, review, badge, etc.
     description = Column(Text, nullable=True)
     related_entity_id = Column(Integer, nullable=True)  # order_id, listing_id, etc.
-    related_entity_type = Column(String(50), nullable=True)  # order, listing, review, etc.
+    related_entity_type = Column(
+        String(50), nullable=True
+    )  # order, listing, review, etc.
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     # Relationships
@@ -443,13 +449,17 @@ class WalletTransaction(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    transaction_type = Column(String(50), nullable=False)  # deposit, withdrawal, payment, refund
+    transaction_type = Column(
+        String(50), nullable=False
+    )  # deposit, withdrawal, payment, refund
     amount = Column(Float, nullable=False)
     balance_before = Column(Float, nullable=False)
     balance_after = Column(Float, nullable=False)
     description = Column(Text, nullable=True)
     transaction_hash = Column(String(255), nullable=True)  # Solana transaction hash
-    status = Column(String(20), default="pending")  # pending, completed, failed, cancelled
+    status = Column(
+        String(20), default="pending"
+    )  # pending, completed, failed, cancelled
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     # Relationships
@@ -482,7 +492,9 @@ class Notification(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     title = Column(String(255), nullable=False)
     message = Column(Text, nullable=False)
-    notification_type = Column(String(50), nullable=False)  # order_update, payment, delivery, etc.
+    notification_type = Column(
+        String(50), nullable=False
+    )  # order_update, payment, delivery, etc.
     is_read = Column(Boolean, default=False)
     read_at = Column(DateTime, nullable=True)
     related_entity_id = Column(Integer, nullable=True)  # order_id, listing_id, etc.
@@ -503,9 +515,15 @@ class FraudReport(Base):
     entity_id = Column(Integer, nullable=False)
     risk_score = Column(Float, nullable=False)
     risk_level = Column(String(20), nullable=False)  # low, medium, high
-    flagged_reasons = Column(Text, nullable=True)  # JSON string for SQLite compatibility
-    detection_method = Column(String(50), nullable=False)  # ai_agent, pattern_analysis, manual
+    flagged_reasons = Column(
+        Text, nullable=True
+    )  # JSON string for SQLite compatibility
+    detection_method = Column(
+        String(50), nullable=False
+    )  # ai_agent, pattern_analysis, manual
     confidence = Column(Float, nullable=False)
-    status = Column(String(20), default="pending")  # pending, reviewed, false_positive, confirmed_fraud
+    status = Column(
+        String(20), default="pending"
+    )  # pending, reviewed, false_positive, confirmed_fraud
     admin_notes = Column(Text, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
