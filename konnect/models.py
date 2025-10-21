@@ -491,3 +491,21 @@ class Notification(Base):
 
     # Relationships
     user = relationship("User", back_populates="notifications")
+
+
+class FraudReport(Base):
+    """Fraud detection report model"""
+
+    __tablename__ = "fraud_reports"
+
+    id = Column(Integer, primary_key=True, index=True)
+    entity_type = Column(String(50), nullable=False)  # user, listing, payment
+    entity_id = Column(Integer, nullable=False)
+    risk_score = Column(Float, nullable=False)
+    risk_level = Column(String(20), nullable=False)  # low, medium, high
+    flagged_reasons = Column(Text, nullable=True)  # JSON string for SQLite compatibility
+    detection_method = Column(String(50), nullable=False)  # ai_agent, pattern_analysis, manual
+    confidence = Column(Float, nullable=False)
+    status = Column(String(20), default="pending")  # pending, reviewed, false_positive, confirmed_fraud
+    admin_notes = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
