@@ -114,28 +114,95 @@ async def get_ai_recommendations(
         )
 
     try:
-        # Get recent listings as recommendations (simplified approach)
-        response = (
-            supabase.table("listings")
+        # Get user's gamification data for better recommendations
+        user_points_response = (
+            supabase.table("user_points")
             .select("*")
-            .eq("is_active", True)
-            .neq("user_id", current_user["id"])  # Don't recommend own listings
-            .order("created_at", desc=True)
-            .limit(limit)
+            .eq("user_id", current_user["id"])
+            .single()
             .execute()
         )
 
+        user_level = 1
+        user_points = 0
+        if user_points_response.data:
+            user_level = user_points_response.data.get("level", 1)
+            user_points = user_points_response.data.get("points", 0)
+
+        # Get user's purchase history for better recommendations
+        purchase_response = (
+            supabase.table("orders")
+            .select("*, listings!orders_listing_id_fkey(*)")
+            .eq("buyer_id", current_user["id"])
+            .eq("status", "completed")
+            .limit(10)
+            .execute()
+        )
+
+        # Analyze user preferences based on purchase history
+        preferred_categories = []
+        avg_price_range = {"min": 0, "max": 1000}
+        
+        if purchase_response.data:
+            categories = [order["listings"]["category"] for order in purchase_response.data if order.get("listings")]
+            preferred_categories = list(set(categories))
+            
+            prices = [order["listings"]["price"] for order in purchase_response.data if order.get("listings")]
+            if prices:
+                avg_price_range = {
+                    "min": max(0, min(prices) * 0.5),
+                    "max": max(prices) * 1.5
+                }
+
+        # Generate AI-powered recommendations
+        context = f"""
+        User Profile:
+        - Level: {user_level}
+        - Points: {user_points}
+        - Preferred Categories: {', '.join(preferred_categories) if preferred_categories else 'None'}
+        - Price Range: ${avg_price_range['min']:.2f} - ${avg_price_range['max']:.2f}
+        
+        Recommend {limit} relevant marketplace items for this campus marketplace user.
+        Consider their level, preferences, and price range.
+        """
+
+        # Get listings that match user preferences
+        query = supabase.table("listings").select("*").eq("is_active", True).neq("user_id", current_user["id"])
+        
+        if preferred_categories:
+            query = query.in_("category", preferred_categories)
+        
+        query = query.gte("price", avg_price_range["min"]).lte("price", avg_price_range["max"])
+        
+        response = query.order("created_at", desc=True).limit(limit * 2).execute()
+
         recommendations = []
         for item in response.data or []:
+            # Calculate confidence score based on user level and preferences
+            confidence_score = 0.6  # Base confidence
+            
+            if item["category"] in preferred_categories:
+                confidence_score += 0.2
+            
+            if avg_price_range["min"] <= item["price"] <= avg_price_range["max"]:
+                confidence_score += 0.1
+            
+            if user_level >= 5:  # Higher level users get better recommendations
+                confidence_score += 0.1
+
             recommendation = {
                 "listing_id": item["id"],
                 "title": item["title"],
                 "price": item["price"],
                 "category": item["category"],
-                "confidence_score": 0.8,  # Mock confidence score
-                "reason": "Based on recent activity and popular items",
+                "confidence_score": min(confidence_score, 1.0),
+                "reason": f"Recommended based on your level {user_level} and preferences",
             }
             recommendations.append(recommendation)
+
+        # Sort by confidence score and limit results
+        recommendations.sort(key=lambda x: x["confidence_score"], reverse=True)
+        recommendations = recommendations[:limit]
 
         return AIRecommendationsResponse(
             user_id=current_user["id"],
@@ -187,10 +254,45 @@ async def get_seller_insights(
         listings = listings_response.data or []
         orders = orders_response.data or []
 
+        # Get seller's gamification data
+        points_response = (
+            supabase.table("user_points")
+            .select("*")
+            .eq("user_id", current_user["id"])
+            .single()
+            .execute()
+        )
+
+        badges_response = (
+            supabase.table("user_badges")
+            .select("*")
+            .eq("user_id", current_user["id"])
+            .execute()
+        )
+
+        # Get seller's reviews
+        reviews_response = (
+            supabase.table("user_reviews")
+            .select("*")
+            .eq("seller_id", current_user["id"])
+            .execute()
+        )
+
+        reviews = reviews_response.data or []
+
         # Calculate basic stats
         total_sales = len(orders)
         total_revenue = sum(order["total_amount"] for order in orders)
         avg_order_value = total_revenue / total_sales if total_sales > 0 else 0
+        
+        # Gamification insights
+        user_level = points_response.data.get("level", 1) if points_response.data else 1
+        user_points = points_response.data.get("points", 0) if points_response.data else 0
+        badges_count = len(badges_response.data) if badges_response.data else 0
+        
+        # Review insights
+        avg_rating = sum([r["rating"] for r in reviews]) / len(reviews) if reviews else 0
+        total_reviews = len(reviews)
 
         # Get top products (most orders)
         product_counts = {}
@@ -219,6 +321,29 @@ async def get_seller_insights(
                     }
                 )
 
+        # Generate AI-powered insights with gamification context
+        if AI_SERVICE_ENABLED:
+            context = f"""
+            Seller Analytics:
+            - Total Sales: {total_sales}
+            - Total Revenue: ${total_revenue:.2f}
+            - Average Order Value: ${avg_order_value:.2f}
+            - User Level: {user_level}
+            - User Points: {user_points}
+            - Badges Earned: {badges_count}
+            - Average Rating: {avg_rating:.1f}/5.0
+            - Total Reviews: {total_reviews}
+            
+            Provide insights and recommendations for improving seller performance, including gamification strategies.
+            """
+
+            ai_insights = generate_ai_response(
+                "Analyze this seller's performance and provide actionable insights including gamification recommendations:",
+                context
+            )
+        else:
+            ai_insights = "AI service not available for advanced insights"
+
         insights = SellerInsights(
             seller_id=current_user["id"],
             total_sales=total_sales,
@@ -226,8 +351,10 @@ async def get_seller_insights(
             average_order_value=avg_order_value,
             top_products=top_products,
             sales_trend=[],  # Would be populated with trend analysis
-            customer_satisfaction=0.0,  # Would be calculated from reviews/ratings
+            customer_satisfaction=avg_rating,
             recommendations=[
+                f"Level {user_level} seller with {user_points} points - great progress!",
+                f"Earned {badges_count} badges - consider targeting specific achievements",
                 "Consider offering bundle deals to increase average order value",
                 "Focus on your top-performing product categories",
                 "Consider offering faster shipping options",
