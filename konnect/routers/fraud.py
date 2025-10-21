@@ -1,14 +1,13 @@
 """Fraud detection router"""
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from ..dependencies import get_current_active_user
 from ..schemas import (
-    FraudDetectionReport,
     FraudDetectionSummary,
     FraudDetectionResponse,
 )
@@ -17,7 +16,6 @@ from ..agents.fraud_detection import (
     analyze_user_activity,
     analyze_listing_suspiciousness,
     detect_payment_fraud,
-    create_fraud_detection_agent,
 )
 
 logger = logging.getLogger(__name__)

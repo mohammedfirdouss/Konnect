@@ -1,7 +1,7 @@
 """Gamification router for points, badges, and leaderboards"""
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -76,46 +76,33 @@ def award_points(
             new_points = current_points + points
             new_level = calculate_level(new_points)
             
-            update_response = (
-                supabase.table("user_points")
-                .update({
-                    "points": new_points,
-                    "level": new_level,
-                    "total_points_earned": points_response.data["total_points_earned"] + points,
-                    "updated_at": datetime.utcnow().isoformat()
-                })
-                .eq("user_id", user_id)
-                .execute()
-            )
+            supabase.table("user_points").update({
+                "points": new_points,
+                "level": new_level,
+                "total_points_earned": points_response.data["total_points_earned"] + points,
+                "updated_at": datetime.utcnow().isoformat(),
+            }).eq("user_id", user_id).execute()
         else:
             # Create new points record
             new_points = points
             new_level = calculate_level(points)
             
-            insert_response = (
-                supabase.table("user_points")
-                .insert({
-                    "user_id": user_id,
-                    "points": new_points,
-                    "level": new_level,
-                    "total_points_earned": points,
-                })
-                .execute()
-            )
+            supabase.table("user_points").insert({
+                "user_id": user_id,
+                "points": new_points,
+                "level": new_level,
+                "total_points_earned": points,
+            }).execute()
 
         # Create transaction record
-        transaction_response = (
-            supabase.table("points_transactions")
-            .insert({
-                "user_id": user_id,
-                "points_change": points,
-                "transaction_type": transaction_type,
-                "description": description,
-                "related_entity_id": related_entity_id,
-                "related_entity_type": related_entity_type,
-            })
-            .execute()
-        )
+        supabase.table("points_transactions").insert({
+            "user_id": user_id,
+            "points_change": points,
+            "transaction_type": transaction_type,
+            "description": description,
+            "related_entity_id": related_entity_id,
+            "related_entity_type": related_entity_type,
+        }).execute()
 
         # Check for level up badges
         if new_level > 1:
@@ -208,19 +195,15 @@ def update_leaderboard(marketplace_id: int):
             badges_count = len(badges_response.data) if badges_response.data else 0
 
             # Upsert leaderboard entry
-            leaderboard_response = (
-                supabase.table("campus_leaderboard")
-                .upsert({
-                    "marketplace_id": marketplace_id,
-                    "user_id": user_id,
-                    "rank": rank,
-                    "points": points,
-                    "level": level,
-                    "badges_count": badges_count,
-                    "updated_at": datetime.utcnow().isoformat()
-                })
-                .execute()
-            )
+            supabase.table("campus_leaderboard").upsert({
+                "marketplace_id": marketplace_id,
+                "user_id": user_id,
+                "rank": rank,
+                "points": points,
+                "level": level,
+                "badges_count": badges_count,
+                "updated_at": datetime.utcnow().isoformat(),
+            }).execute()
 
         logger.info(f"Updated leaderboard for marketplace {marketplace_id}")
 
@@ -336,7 +319,7 @@ async def get_ai_gamification_recommendations(
         total_orders = len(orders)
         completed_orders = len([o for o in orders if o["status"] == "completed"])
         total_listings = len(listings)
-        active_listings = len([l for l in listings if l["is_active"]])
+        active_listings = len([listing for listing in listings if listing["is_active"]])
 
         # Generate AI recommendations
         try:

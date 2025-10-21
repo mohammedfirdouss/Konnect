@@ -310,14 +310,16 @@ async def mark_all_notifications_read(
         )
 
     try:
-        supabase.table("notifications")
-        .update({
-            "is_read": True,
-            "read_at": datetime.utcnow().isoformat(),
-        })
-        .eq("user_id", current_user["id"])
-        .eq("is_read", False)
-        .execute()
+        (
+            supabase.table("notifications")
+            .update({
+                "is_read": True,
+                "read_at": datetime.utcnow().isoformat(),
+            })
+            .eq("user_id", current_user["id"])
+            .eq("is_read", False)
+            .execute()
+        )
 
         return {"message": "All notifications marked as read"}
 
