@@ -8,7 +8,6 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from ..dependencies import get_current_active_user
 from ..schemas import (
-    DeliveryCode,
     DeliveryConfirmationRequest,
     DeliveryConfirmationResponse,
 )

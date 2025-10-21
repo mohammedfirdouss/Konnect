@@ -1,7 +1,7 @@
 """Bills and subscriptions router"""
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -276,8 +276,8 @@ async def get_bills_summary(
         overdue_bills = len([b for b in bills if b["status"] == "overdue"])
         
         total_amount = sum(b["amount"] for b in bills)
-        paid_amount = sum(b["amount"] for b in bills if b["status"] == "paid"])
-        pending_amount = sum(b["amount"] for b in bills if b["status"] == "pending"])
+        paid_amount = sum(b["amount"] for b in bills if b["status"] == "paid")
+        pending_amount = sum(b["amount"] for b in bills if b["status"] == "pending")
 
         # Group by bill type
         bill_types = {}

@@ -154,18 +154,6 @@ async def get_ai_recommendations(
                     "max": max(prices) * 1.5
                 }
 
-        # Generate AI-powered recommendations
-        context = f"""
-        User Profile:
-        - Level: {user_level}
-        - Points: {user_points}
-        - Preferred Categories: {', '.join(preferred_categories) if preferred_categories else 'None'}
-        - Price Range: ${avg_price_range['min']:.2f} - ${avg_price_range['max']:.2f}
-        
-        Recommend {limit} relevant marketplace items for this campus marketplace user.
-        Consider their level, preferences, and price range.
-        """
-
         # Get listings that match user preferences
         query = supabase.table("listings").select("*").eq("is_active", True).neq("user_id", current_user["id"])
         
@@ -337,12 +325,25 @@ async def get_seller_insights(
             Provide insights and recommendations for improving seller performance, including gamification strategies.
             """
 
-            ai_insights = generate_ai_response(
+            ai_recommendation_text = generate_ai_response(
                 "Analyze this seller's performance and provide actionable insights including gamification recommendations:",
                 context
             )
         else:
-            ai_insights = "AI service not available for advanced insights"
+            ai_recommendation_text = None
+
+        recommendations = [
+            f"Level {user_level} seller with {user_points} points - great progress!",
+            f"Earned {badges_count} badges - consider targeting specific achievements",
+            "Consider offering bundle deals to increase average order value",
+            "Focus on your top-performing product categories",
+            "Consider offering faster shipping options",
+        ]
+
+        if ai_recommendation_text:
+            recommendations.insert(0, ai_recommendation_text)
+        elif not AI_SERVICE_ENABLED:
+            recommendations.append("Enable AI services to unlock advanced seller insights")
 
         insights = SellerInsights(
             seller_id=current_user["id"],
@@ -352,13 +353,7 @@ async def get_seller_insights(
             top_products=top_products,
             sales_trend=[],  # Would be populated with trend analysis
             customer_satisfaction=avg_rating,
-            recommendations=[
-                f"Level {user_level} seller with {user_points} points - great progress!",
-                f"Earned {badges_count} badges - consider targeting specific achievements",
-                "Consider offering bundle deals to increase average order value",
-                "Focus on your top-performing product categories",
-                "Consider offering faster shipping options",
-            ],
+            recommendations=recommendations,
         )
 
         return insights

@@ -3,23 +3,12 @@
 import logging
 import os
 from typing import Dict, Optional, Tuple
-from decimal import Decimal
 
 # Conditional Solana imports
 try:
     from solana.rpc.api import Client
-    from solana.rpc.types import TxOpts
     from solana.keypair import Keypair
     from solana.publickey import PublicKey
-    from solana.transaction import Transaction
-    from solana.system_program import TransferParams, transfer
-    from solders.system_program import TransferParams as SoldersTransferParams, transfer as solders_transfer
-    from solders.keypair import Keypair as SoldersKeypair
-    from solders.pubkey import Pubkey as SoldersPubkey
-    from solders.transaction import Transaction as SoldersTransaction
-    from solders.hash import Hash as SoldersHash
-    from solders.instruction import Instruction
-    from solders.system_program import TransferParams as SoldersTransferParams, transfer as solders_transfer
     
     SOLANA_AVAILABLE = True
 except ImportError:
@@ -119,9 +108,6 @@ def create_escrow_account(
         return False, None, None
     
     try:
-        # Convert SOL amount to lamports (1 SOL = 1,000,000,000 lamports)
-        lamports = int(amount * 1_000_000_000)
-        
         # For now, simulate escrow creation
         # In a real implementation, this would:
         # 1. Create a new escrow account
