@@ -22,13 +22,20 @@ from .routers import (
     admin,
     ai,
     auth,
+    bills,
+    delivery,
+    fraud,
+    gamification,
     images,
     listings,
     marketplaces,
     messages,
+    notifications,
     orders,
     products,
+    solana,
     users,
+    wallet,
 )
 
 # Load environment variables from .env file
@@ -123,6 +130,13 @@ app.include_router(ai.router)
 app.include_router(admin.router)
 app.include_router(images.router)
 app.include_router(messages.router)
+app.include_router(gamification.router)
+app.include_router(bills.router)
+app.include_router(wallet.router)
+app.include_router(delivery.router)
+app.include_router(notifications.router)
+app.include_router(fraud.router)
+app.include_router(solana.router)
 
 
 @app.get("/")
@@ -139,6 +153,10 @@ async def health_check():
 
     # Check Supabase connection
     supabase_status = check_supabase_connection()
+    
+    # Check Solana connection
+    from .solana_client import check_solana_connection
+    solana_status = check_solana_connection()
 
     health_status = {
         "status": "healthy" if supabase_status["supabase_configured"] else "degraded",
@@ -146,11 +164,16 @@ async def health_check():
         "version": "0.1.0",
         "environment": os.getenv("ENVIRONMENT", "development"),
         "supabase": supabase_status,
+        "solana": solana_status,
         "database": {
             "type": "supabase_postgresql",
             "connected": supabase_status["connection_test"] == "success"
             if "connection_test" in supabase_status
             else False,
+        },
+        "blockchain": {
+            "type": "solana",
+            "connected": solana_status.get("solana_available", False),
         },
     }
 
