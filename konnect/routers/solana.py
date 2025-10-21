@@ -1,7 +1,6 @@
 """Solana blockchain router"""
 
 import logging
-from typing import Dict, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 

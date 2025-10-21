@@ -67,7 +67,7 @@ async def create_order(
         )
         
         if not success:
-            logger.warning(f"Failed to create escrow account for order")
+            logger.warning("Failed to create escrow account for order")
             escrow_tx_hash = "escrow_failed"
 
         # Create the order

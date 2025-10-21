@@ -2,14 +2,12 @@
 
 import logging
 from datetime import datetime
-from typing import List, Optional
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from ..dependencies import get_current_active_user
 from ..schemas import (
-    Notification,
-    NotificationCreate,
     NotificationResponse,
 )
 from ..supabase_client import supabase
@@ -272,7 +270,7 @@ async def mark_notification_read(
             )
 
         # Mark as read
-        update_response = (
+        response = (
             supabase.table("notifications")
             .update({
                 "is_read": True,
@@ -282,13 +280,13 @@ async def mark_notification_read(
             .execute()
         )
 
-        if update_response.data:
+        if response.data:
             return {"message": "Notification marked as read"}
-        else:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to update notification",
-            )
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update notification",
+        )
 
     except HTTPException:
         raise
@@ -312,16 +310,14 @@ async def mark_all_notifications_read(
         )
 
     try:
-        update_response = (
-            supabase.table("notifications")
-            .update({
-                "is_read": True,
-                "read_at": datetime.utcnow().isoformat(),
-            })
-            .eq("user_id", current_user["id"])
-            .eq("is_read", False)
-            .execute()
-        )
+        supabase.table("notifications")
+        .update({
+            "is_read": True,
+            "read_at": datetime.utcnow().isoformat(),
+        })
+        .eq("user_id", current_user["id"])
+        .eq("is_read", False)
+        .execute()
 
         return {"message": "All notifications marked as read"}
 
@@ -363,12 +359,7 @@ async def delete_notification(
             )
 
         # Delete notification
-        delete_response = (
-            supabase.table("notifications")
-            .delete()
-            .eq("id", notification_id)
-            .execute()
-        )
+        supabase.table("notifications").delete().eq("id", notification_id).execute()
 
         return {"message": "Notification deleted"}
 
