@@ -4,7 +4,9 @@ from dotenv import load_dotenv
 import logging
 
 # Load environment variables from .env file
-load_dotenv()
+# Load environment from the same file as main.py
+env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "Konnect.env")
+load_dotenv(env_path)
 
 logger = logging.getLogger(__name__)
 

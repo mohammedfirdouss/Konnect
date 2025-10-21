@@ -39,7 +39,16 @@ from .routers import (
 )
 
 # Load environment variables from .env file
-load_dotenv("Konnect.env")
+env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "Konnect.env")
+print(f"Loading environment from: {env_path}")
+load_dotenv(env_path)
+
+# Debug environment variables
+print(f"SUPABASE_URL: {os.getenv('SUPABASE_URL', 'Not found')}")
+print(f"SUPABASE_ANON_KEY: {os.getenv('SUPABASE_ANON_KEY', 'Not found')}")
+print(f"OPENAI_API_KEY: {os.getenv('OPENAI_API_KEY', 'Not found')}")
+print(f"GOOGLE_API_KEY: {os.getenv('GOOGLE_API_KEY', 'Not found')}")
+print(f"REDIS_URL: {os.getenv('REDIS_URL', 'Not found')}")
 
 # Configure OpenTelemetry Metrics
 prometheus_reader = PrometheusMetricReader()
