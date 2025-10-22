@@ -124,7 +124,7 @@ export function HomeTab() {
         </div>
       </Card>
 
-      <div className="p-4 rounded-lg" style={{ backgroundColor: '#5AC8FA', color: '#121212' }}>
+      <div className="p-4 rounded-lg" style={{ backgroundColor: '#5AC8FA', color: '#121212', display: 'none' }}>
         <p className="text-sm">
           💡 <strong>Tip:</strong> Complete your profile to get better AI recommendations!
         </p>
