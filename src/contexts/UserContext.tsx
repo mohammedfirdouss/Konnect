@@ -9,22 +9,29 @@ export interface User {
   role: UserRole;
   walletAddress: string;
   balance: number;
+  gamificationPoints?: number;
+  level?: number;
 }
 
 interface UserContextType {
   user: User | null;
   setUser: (user: User | null) => void;
   isAuthenticated: boolean;
+  hasCompletedOnboarding: boolean;
+  setHasCompletedOnboarding: (completed: boolean) => void;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export function UserProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
 
   // Load user from localStorage on mount
   useEffect(() => {
     const savedUser = localStorage.getItem('konnect_user');
+    const onboardingStatus = localStorage.getItem('konnect_onboarding_completed');
+    
     if (savedUser) {
       try {
         setUser(JSON.parse(savedUser));
@@ -32,6 +39,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
         console.error('Failed to parse saved user', e);
         localStorage.removeItem('konnect_user');
       }
+    }
+
+    if (onboardingStatus === 'true') {
+      setHasCompletedOnboarding(true);
     }
   }, []);
 
@@ -44,12 +55,19 @@ export function UserProvider({ children }: { children: ReactNode }) {
     }
   }, [user]);
 
+  // Save onboarding status
+  useEffect(() => {
+    localStorage.setItem('konnect_onboarding_completed', hasCompletedOnboarding.toString());
+  }, [hasCompletedOnboarding]);
+
   return (
     <UserContext.Provider
       value={{
         user,
         setUser,
         isAuthenticated: !!user,
+        hasCompletedOnboarding,
+        setHasCompletedOnboarding,
       }}
     >
       {children}

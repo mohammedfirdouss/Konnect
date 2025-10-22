@@ -2,16 +2,22 @@ import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from './ui/button';
-import { Wallet, CheckCircle, Loader2 } from 'lucide-react';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Wallet, CheckCircle, Loader2, Eye, EyeOff } from 'lucide-react';
 import { useUser } from '../contexts/UserContext';
 import { toast } from 'sonner@2.0.3';
 
 export function WalletCreation() {
   const navigate = useNavigate();
-  const { user, setUser } = useUser();
+  const { user, setUser, setHasCompletedOnboarding } = useUser();
   const [isCreating, setIsCreating] = useState(true);
   const [walletAddress, setWalletAddress] = useState('');
-  const [step, setStep] = useState<'creating' | 'created'>('creating');
+  const [step, setStep] = useState<'creating' | 'created' | 'password'>('creating');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
     if (!user?.name || !user?.email) {
@@ -40,7 +46,9 @@ export function WalletCreation() {
           setUser({
             ...user,
             walletAddress: address,
-            balance: 0,
+            balance: 50000, // Starting balance
+            gamificationPoints: 0,
+            level: 1,
           });
         }
       }, 2500);
@@ -49,9 +57,40 @@ export function WalletCreation() {
     createWallet();
   }, []);
 
-  const handleContinue = () => {
-    toast.success('Account created successfully!');
-    navigate('/home');
+  const handleContinueToPassword = () => {
+    setStep('password');
+  };
+
+  const handleCreateAccount = () => {
+    if (!password || !confirmPassword) {
+      toast.error('Please enter and confirm your password');
+      return;
+    }
+
+    if (password.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+
+    // Save credentials to localStorage
+    if (user) {
+      const credentials = {
+        email: user.email,
+        password: password, // In production, this should be hashed
+      };
+      localStorage.setItem('konnect_credentials', JSON.stringify(credentials));
+      
+      // Mark onboarding as completed
+      setHasCompletedOnboarding(true);
+      
+      toast.success('Account created successfully!');
+      navigate('/home');
+    }
   };
 
   return (
@@ -67,7 +106,7 @@ export function WalletCreation() {
           <div className="h-1 flex-1 rounded-full" style={{ backgroundColor: '#9945FF' }} />
           <div className="h-1 flex-1 rounded-full" style={{ backgroundColor: '#9945FF' }} />
           <div className="h-1 flex-1 rounded-full" style={{ backgroundColor: '#9945FF' }} />
-          <div className="h-1 flex-1 rounded-full" style={{ backgroundColor: step === 'created' ? '#9945FF' : '#333333' }} />
+          <div className="h-1 flex-1 rounded-full" style={{ backgroundColor: step === 'password' || step === 'created' ? '#9945FF' : '#333333' }} />
         </div>
 
         {step === 'creating' ? (
@@ -95,7 +134,7 @@ export function WalletCreation() {
               </span>
             </div>
           </>
-        ) : (
+        ) : step === 'created' ? (
           <>
             <motion.div
               initial={{ scale: 0 }}
@@ -133,18 +172,18 @@ export function WalletCreation() {
               <div className="grid grid-cols-2 gap-4 pt-4" style={{ borderTop: '1px solid #333333' }}>
                 <div>
                   <p className="text-xs mb-1" style={{ color: '#666666' }}>
-                    SOL Balance
+                    Starting Balance
                   </p>
                   <p className="text-sm" style={{ color: '#FFFFFF' }}>
-                    0.00 SOL
+                    ₦50,000
                   </p>
                 </div>
                 <div>
                   <p className="text-xs mb-1" style={{ color: '#666666' }}>
-                    USDT Balance
+                    SOL Balance
                   </p>
                   <p className="text-sm" style={{ color: '#FFFFFF' }}>
-                    ₦0.00
+                    1.00 SOL
                   </p>
                 </div>
               </div>
@@ -157,11 +196,98 @@ export function WalletCreation() {
             </div>
 
             <Button
-              onClick={handleContinue}
+              onClick={handleContinueToPassword}
               className="w-full"
               style={{ backgroundColor: '#9945FF', color: '#FFFFFF' }}
             >
-              Get Started
+              Continue
+            </Button>
+          </>
+        ) : (
+          <>
+            <div className="w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center" style={{ backgroundColor: '#9945FF' }}>
+              <Wallet size={40} style={{ color: '#FFFFFF' }} />
+            </div>
+
+            <h2 className="mb-3" style={{ color: '#FFFFFF' }}>
+              Secure Your Account
+            </h2>
+            <p className="mb-6" style={{ color: '#B3B3B3' }}>
+              Create a password to protect your account
+            </p>
+
+            <div className="space-y-4 text-left mb-6">
+              <div>
+                <Label style={{ color: '#B3B3B3' }}>Create Password</Label>
+                <div className="relative">
+                  <Input
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Enter password (min. 6 characters)"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    style={{
+                      backgroundColor: '#1E1E1E',
+                      borderColor: '#333333',
+                      color: '#FFFFFF',
+                      paddingRight: '48px',
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2"
+                  >
+                    {showPassword ? (
+                      <EyeOff size={20} style={{ color: '#666666' }} />
+                    ) : (
+                      <Eye size={20} style={{ color: '#666666' }} />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <Label style={{ color: '#B3B3B3' }}>Confirm Password</Label>
+                <div className="relative">
+                  <Input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    placeholder="Re-enter password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    style={{
+                      backgroundColor: '#1E1E1E',
+                      borderColor: '#333333',
+                      color: '#FFFFFF',
+                      paddingRight: '48px',
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2"
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff size={20} style={{ color: '#666666' }} />
+                    ) : (
+                      <Eye size={20} style={{ color: '#666666' }} />
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-3 rounded-lg mb-6" style={{ backgroundColor: 'rgba(90, 200, 250, 0.1)', borderLeft: '3px solid #5AC8FA' }}>
+              <p className="text-xs text-left" style={{ color: '#B3B3B3' }}>
+                🔐 Use this password to sign in to your account. Make sure to remember it!
+              </p>
+            </div>
+
+            <Button
+              onClick={handleCreateAccount}
+              className="w-full"
+              style={{ backgroundColor: '#9945FF', color: '#FFFFFF' }}
+            >
+              Create Account
             </Button>
           </>
         )}
